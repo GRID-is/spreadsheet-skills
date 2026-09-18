@@ -1803,7 +1803,7 @@ type SlimRangeOrCoords = {
 ### function parseReference()
 
 ```ts
-function parse(refStr?: string): Readonly<ParsedReference> | null
+function parseReference(refStr?: string): Readonly<ParsedReference> | null
 ```
 
 This returns an object with a breakdown of the reference or a null if the reference wasn't valid.

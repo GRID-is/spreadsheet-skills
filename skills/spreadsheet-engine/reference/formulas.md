@@ -34,7 +34,7 @@ callers must enforce it, and/or guarding against this being `null` with appropri
 ### const formulaParserReady
 
 ```ts
-const ready: Promise<{
+const formulaParserReady: Promise<{
   parse: FnParseFormula;
   replaceRefsOnMove: ReplaceRefsOnMoveFn;
   replaceRefsOnDelete: ReplaceRefsOnDeleteFn;
@@ -52,7 +52,7 @@ Promise which can be awaited in asynchronous code to ensure that the formula par
 ### const functions
 
 ```ts
-const handlers: Handlers
+const functions: Handlers
 ```
 
 ### const VOLATILES

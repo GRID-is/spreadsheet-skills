@@ -69,10 +69,11 @@ function collect(pkg, dts) {
       }
       if (ts.isImportDeclaration(n) && n.moduleSpecifier.text.startsWith(".")) {
         visitFile(path.resolve(path.dirname(f), n.moduleSpecifier.text.replace(/\.js$/, ".d.ts")));
-        if (n.importClause?.namedBindings && ts.isNamedImports(n.importClause.namedBindings)) {
-          // Re-exported chunk symbols are referenced by their local alias.
-          for (const e of n.importClause.namedBindings.elements) exported.add(e.name.text);
-        }
+        // An import is not a re-export. A bundled entry point imports its own
+        // internals (Style, CalcProps, Buffer) and exports only some of them,
+        // so only the export clause above decides what is public. Where it
+        // renames (`export { ready as formulaParserReady }`) the public name is
+        // the exported one, and the local name stays internal.
       }
       if (n.modifiers?.some((m) => m.kind === ts.SyntaxKind.ExportKeyword)) {
         if (ts.isVariableStatement(n)) n.declarationList.declarations.forEach((d) => exported.add(d.name.getText()));
