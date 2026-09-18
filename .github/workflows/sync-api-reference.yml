@@ -46,7 +46,7 @@ jobs:
           {
             echo "list<<EOF"
             for p in spreadsheet-engine spreadsheet-viewer spreadsheet-editor agent-tools; do
-              echo "- @grid-is/$p@$(node -p "require('@grid-is/$p/package.json').version")"
+              echo "- @grid-is/$p@$(node -p "JSON.parse(require('fs').readFileSync('node_modules/@grid-is/$p/package.json', 'utf8')).version")"
             done
             echo "EOF"
           } >> "$GITHUB_OUTPUT"

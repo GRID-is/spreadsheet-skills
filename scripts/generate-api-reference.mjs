@@ -5,6 +5,11 @@
 //   npm run sync          regenerate the reference files and version stamps
 //   npm run sync -- --check   exit 1 if regenerating would change anything
 //
+// Both modes exit 1 without writing anything if a symbol named explicitly in
+// the config is no longer exported by the package, or if a SKILL.md lacks a
+// generated block marker. A package release that drops or renames an API must
+// fail the sync, not silently vanish from the reference.
+//
 // The prose in each SKILL.md is written by hand. Only the files under
 // reference/ that start with the GENERATED marker, and the marked blocks in
 // SKILL.md, are produced here. See scripts/api-reference.config.mjs for which
@@ -21,24 +26,34 @@ const CHECK = process.argv.includes("--check");
 const MARKER = "<!-- GENERATED FILE. Do not edit by hand. Regenerate with `npm run sync`. -->";
 
 let changed = 0;
+const errors = [];
+const pending = [];
 
 function pkgVersion(pkg) {
   const p = path.join(ROOT, "node_modules", pkg, "package.json");
   return JSON.parse(fs.readFileSync(p, "utf8")).version;
 }
 
+// Writes are queued so that nothing touches the tree if an error turns up
+// later in the run.
 function writeFile(file, content) {
-  const abs = path.join(ROOT, file);
-  const current = fs.existsSync(abs) ? fs.readFileSync(abs, "utf8") : null;
-  if (current === content) return;
-  changed++;
-  if (CHECK) {
-    console.log(`would change: ${file}`);
-    return;
+  pending.push([file, content]);
+}
+
+function flushWrites() {
+  for (const [file, content] of pending) {
+    const abs = path.join(ROOT, file);
+    const current = fs.existsSync(abs) ? fs.readFileSync(abs, "utf8") : null;
+    if (current === content) continue;
+    changed++;
+    if (CHECK) {
+      console.log(`would change: ${file}`);
+      continue;
+    }
+    fs.mkdirSync(path.dirname(abs), { recursive: true });
+    fs.writeFileSync(abs, content);
+    console.log(`wrote ${file}`);
   }
-  fs.mkdirSync(path.dirname(abs), { recursive: true });
-  fs.writeFileSync(abs, content);
-  console.log(`wrote ${file}`);
 }
 
 // ---------------------------------------------------------------------------
@@ -305,8 +320,11 @@ function renderOutput(target, output, decl, version) {
   }
   for (const n of names) {
     if (included.has(n)) continue;
+    // "kind:" and "rest" selectors only ever yield exported names, so a miss
+    // here is always a name listed explicitly in the config. That means the
+    // package dropped or renamed it, which is exactly what this check is for.
     if (!decl.exported.has(n)) {
-      console.warn(`warning: ${target.package} does not export ${n} (listed in ${output.file})`);
+      errors.push(`${target.package}@${version} does not export ${n} (listed in ${output.file})`);
       continue;
     }
     const rendered = renderSymbol(decl, n);
@@ -330,12 +348,15 @@ function isClaimed(target, name, current) {
 // ---------------------------------------------------------------------------
 // Marked blocks inside SKILL.md files
 
-function replaceBlock(text, tag, body) {
+function replaceBlock(text, tag, body, file) {
   const start = `<!-- generated:${tag} -->`;
   const end = `<!-- /generated:${tag} -->`;
   const i = text.indexOf(start);
   const j = text.indexOf(end);
-  if (i === -1 || j === -1 || j < i) return text;
+  if (i === -1 || j === -1 || j < i) {
+    errors.push(`${file} is missing the ${start} ... ${end} block`);
+    return text;
+  }
   return text.slice(0, i + start.length) + "\n" + body.trim() + "\n" + text.slice(j);
 }
 
@@ -362,11 +383,12 @@ function updateSkillFiles() {
   for (const dir of fs.readdirSync(skillsDir)) {
     const file = path.join(skillsDir, dir, "SKILL.md");
     if (!fs.existsSync(file)) continue;
+    const rel = path.relative(ROOT, file);
     const original = fs.readFileSync(file, "utf8");
-    let text = replaceBlock(original, "catalogue", catalogueBlock());
+    let text = replaceBlock(original, "catalogue", catalogueBlock(), rel);
     const pkgs = CATALOGUE.groups.flatMap((g) => g.skills).find((s) => s.name === dir)?.packages ?? [];
-    if (pkgs.length) text = replaceBlock(text, "versions", versionsBlock(pkgs));
-    writeFile(path.relative(ROOT, file), text);
+    if (pkgs.length) text = replaceBlock(text, "versions", versionsBlock(pkgs), rel);
+    writeFile(rel, text);
   }
 }
 
@@ -380,6 +402,13 @@ for (const target of TARGETS) {
   }
 }
 updateSkillFiles();
+
+if (errors.length) {
+  for (const e of errors) console.error(`error: ${e}`);
+  console.error(`${errors.length} error(s). Nothing was written. Update scripts/api-reference.config.mjs or the skill files.`);
+  process.exit(1);
+}
+flushWrites();
 
 if (CHECK) {
   if (changed) {
