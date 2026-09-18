@@ -26,7 +26,9 @@ const PACKAGES = {
 };
 
 // Methods that appear in examples but belong to JavaScript, Node, the DOM,
-// React, zod or the MCP SDK rather than to a GRID package.
+// React, zod or the MCP SDK rather than to a GRID package. The lint rejects
+// any method call it cannot attribute to a GRID type, so when an example
+// legitimately uses a new external API, add its method names here.
 const KNOWN_METHODS = new Set(
   `map filter find findIndex forEach push pop shift unshift join slice splice concat flat flatMap some every reduce sort reverse includes indexOf
    entries keys values assign create freeze fromEntries then catch finally resolve reject all allSettled
