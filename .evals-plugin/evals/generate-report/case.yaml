@@ -1,6 +1,0 @@
-schema_version: "1.1"
-name: generate-report
-description: xlsx-generation. Build a workbook with formulas from tabular data and verify the total.
-tags: [smoke, engine]
-context:
-  scaffold_script: fixture.sh
