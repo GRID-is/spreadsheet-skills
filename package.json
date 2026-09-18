@@ -10,13 +10,16 @@
     "sync": "node scripts/generate-api-reference.mjs && node scripts/generate-tools-reference.mjs && node scripts/sync-plugin-skills.mjs",
     "sync:check": "node scripts/generate-api-reference.mjs --check && node scripts/generate-tools-reference.mjs --check && node scripts/sync-plugin-skills.mjs --check",
     "lint": "node scripts/lint-skills.mjs",
-    "update-packages": "npm install --save-dev @grid-is/spreadsheet-engine@latest @grid-is/spreadsheet-viewer@latest @grid-is/spreadsheet-editor@latest @grid-is/agent-tools@latest"
+    "update-packages": "npm install --save-dev @grid-is/spreadsheet-engine@latest @grid-is/spreadsheet-viewer@latest @grid-is/spreadsheet-editor@latest @grid-is/agent-tools@latest",
+    "test:examples": "node scripts/run-examples.mjs",
+    "test:evals": "node scripts/run-evals.mjs"
   },
   "devDependencies": {
     "@grid-is/agent-tools": "^0.3.0",
     "@grid-is/spreadsheet-editor": "^0.6.0",
     "@grid-is/spreadsheet-engine": "^17.1.0",
     "@grid-is/spreadsheet-viewer": "^3.0.5",
+    "numfmt": "^3.2.6",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "typescript": "^5.9.0",

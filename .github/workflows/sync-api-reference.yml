@@ -19,6 +19,8 @@ permissions:
 jobs:
   sync:
     runs-on: ubuntu-latest
+    outputs:
+      pr-operation: ${{ steps.pr.outputs.pull-request-operation }}
     steps:
       - uses: actions/checkout@v4
 
@@ -50,6 +52,7 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
       - name: Open pull request
+        id: pr
         uses: peter-evans/create-pull-request@v7
         with:
           branch: sync/api-reference
@@ -66,3 +69,12 @@ jobs:
           labels: sync
           delete-branch: true
 
+  # A pull request opened by the workflow's own token does not trigger other
+  # workflows, so the agent evals run from here against the sync branch.
+  evals:
+    needs: sync
+    if: contains(fromJSON('["created", "updated"]'), needs.sync.outputs.pr-operation)
+    uses: ./.github/workflows/evals.yml
+    with:
+      ref: sync/api-reference
+    secrets: inherit

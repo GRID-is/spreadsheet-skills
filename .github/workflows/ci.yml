@@ -19,3 +19,5 @@ jobs:
         run: npm run sync:check
       - name: Skills lint
         run: npm run lint
+      - name: Examples run against the installed packages
+        run: npm run test:examples

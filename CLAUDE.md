@@ -15,6 +15,13 @@ Codex plugin whose `skills/` folder is a copy of two of the top-level skills.
 - **Never invent an API.** Every method, prop, tool name or option in a code fence must exist in the
   installed package's type definitions. `npm run lint` checks this. When in doubt, run it against
   the package in `node_modules` before writing it down.
+- **Mark examples that can run, and keep them running.** `npm run test:examples` executes every
+  `js` fence whose opening line carries a marker: `js setup` (a complete program, prepended to the
+  `js run` fragments below it in the same file), `js run` (a fragment that continues the setup) or
+  `js standalone` (a complete program on its own). Each runs in its own process in a directory
+  seeded with the workbooks from `tests/fixtures/build-fixtures.mjs` (budget.xlsx, model.xlsx,
+  loan.xlsx, sales.csv). Mark every example that can run this way. Leave browser code, network
+  calls and pseudo-code unmarked. CI runs the suite.
 - **Descriptions lead with what people search for.** The frontmatter `description` is what
   `npx skills find` and agents' auto-invoke match on. Start with the task and the words a developer
   types (spreadsheet, Excel, xlsx, formulas, React), name the package, then list trigger phrases.
@@ -32,6 +39,7 @@ Codex plugin whose `skills/` folder is a copy of two of the top-level skills.
 npm install
 npm run sync
 npm run lint
+npm run test:examples
 claude plugin validate plugins/agent-tools     # if the claude CLI is available
 ```
 
