@@ -122,9 +122,27 @@ reference file.
 ## Excel and Google Sheets modes
 
 The engine implements both function sets and both sets of evaluation rules. A loaded .xlsx picks
-the mode of its originating application; `Model.empty(name, { mode: MODE_GOOGLE })` or the same
-option on any loader pins it. `MODE_EXCEL`, `MODE_GOOGLE`, `MODE_GRID_SHEET` and `MODE_ALL` are
-exported constants. Functions such as `QUERY` and `ARRAYFORMULA` evaluate in Google mode.
+the mode of its originating application, usually Excel. Pin a different one with the `mode` option
+the loaders and `addWorkbook` take. `Model.empty` takes only a filename, so there is no mode
+option to pass there.
+
+```js standalone
+import { Model, MODE_EXCEL, MODE_GOOGLE } from "@grid-is/spreadsheet-engine";
+
+await Model.preconditions;
+
+// Excel, from the file's originating application
+const fromFile = await Model.fromXLSXFile("model.xlsx");
+fromFile.getWorkbook("model.xlsx").mode === MODE_EXCEL;    // true
+
+// Google Sheets, pinned on the loader
+const google = await Model.fromXLSXFile("model.xlsx", { mode: MODE_GOOGLE });
+google.getWorkbook("model.xlsx").mode === MODE_GOOGLE;     // true
+```
+
+`MODE_EXCEL`, `MODE_GOOGLE`, `MODE_GRID_SHEET` and `MODE_ALL` are exported constants. Functions such
+as `QUERY` and `ARRAYFORMULA` are in the Google set only. A cell formula evaluates in its own
+workbook's mode. `model.runFormula` evaluates at the model level, which is `MODE_GRID_SHEET`.
 
 ## Building a formula bar
 

@@ -169,10 +169,29 @@ function isHidden(member, doc) {
   return false;
 }
 
-function signature(node) {
+// The identifier a declaration declares, as a node, when there is exactly one.
+// `export { ready as formulaParserReady }` leaves the declaration itself named
+// `ready`, so the reference has to rename it or it documents a name the package
+// does not export.
+function declNameNode(node) {
+  if (ts.isVariableStatement(node)) {
+    const ds = node.declarationList.declarations;
+    return ds.length === 1 ? ds[0].name : null;
+  }
+  return node.name ?? null;
+}
+
+function signature(node, publicName) {
   // The declaration text without leading JSDoc, normalised to one line per
   // declaration and two-space indentation.
   let text = node.getText();
+  // Rename by offset rather than by regex, so an identical name elsewhere in
+  // the signature (a parameter, a type reference) is left alone.
+  const nameNode = publicName ? declNameNode(node) : null;
+  if (nameNode && nameNode.getText() !== publicName) {
+    const at = nameNode.getStart() - node.getStart();
+    text = text.slice(0, at) + publicName + text.slice(at + nameNode.getText().length);
+  }
   text = text.replace(/^(export |declare |default )+/g, "");
   text = text.replace(/\t/g, "  ");
   text = text.replace(/;\s*$/, "");
@@ -269,7 +288,7 @@ function renderSimple(nodes, name) {
       : ts.isEnumDeclaration(node)
         ? "enum"
         : "const";
-  const sigs = nodes.map(signature);
+  const sigs = nodes.map((n) => signature(n, name));
   return block(`${kind} ${name}${kind === "function" ? "()" : ""}`, doc, sigs.join("\n"));
 }
 
