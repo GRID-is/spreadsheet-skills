@@ -42,8 +42,12 @@ model; `isError` is `true` for a failed call so you can hand the message back ra
 
 ## Wire into the Claude API
 
-```js
-import Anthropic from "@anthropic-ai/sdk";
+The Messages API takes tools as `{ name, description, input_schema }`. Build that list from the
+GRID tools once. When the model returns a `tool_use` block, look the tool up by name, call `run`
+with the block's input, and return `text` as the `tool_result` content with `is_error` set from
+`isError`.
+
+```js standalone
 import { createGridTools } from "@grid-is/agent-tools";
 import { z } from "zod";
 
@@ -56,32 +60,15 @@ const tools = gridTools.map((t) => ({
   input_schema: z.toJSONSchema(z.object(t.inputSchema)),
 }));
 
-const client = new Anthropic();
-const messages = [{ role: "user", content: "Open budget.xlsx and tell me the total spend by category." }];
-
-while (true) {
-  const response = await client.messages.create({
-    model: "claude-fable-5-1",
-    max_tokens: 4096,
-    tools,
-    messages,
-  });
-  messages.push({ role: "assistant", content: response.content });
-  if (response.stop_reason !== "tool_use") break;
-
-  const results = [];
-  for (const block of response.content) {
-    if (block.type !== "tool_use") continue;
-    const result = await byName.get(block.name).run(block.input);
-    results.push({ type: "tool_result", tool_use_id: block.id, content: result.text, is_error: result.isError });
-  }
-  messages.push({ role: "user", content: results });
+async function handleToolUse(block) {
+  const result = await byName.get(block.name).run(block.input);
+  return { type: "tool_result", tool_use_id: block.id, content: result.text, is_error: result.isError };
 }
 ```
 
 `createGridTools(cwd)` resolves relative paths against `cwd`. One tool set holds one session's
 workbooks; create a set per conversation. The Anthropic SDK's tool runner and the Agent SDK accept
-the same `{ name, description, input_schema }` objects plus a handler that calls `run`.
+the same tool objects plus a handler like `handleToolUse`, so there is no loop to write.
 
 ## Other frameworks
 
