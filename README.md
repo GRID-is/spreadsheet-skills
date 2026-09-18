@@ -9,27 +9,27 @@ Quick start
 
 Install this skill:
 
-``` sh
-npx skills add GRID-is/skills
+```sh
+npx skills add GRID-is/spreadsheet-skills
 ```
 
 Alternatively, install the skills from the repo manually:
 
-``` sh
-git clone https://github.com/GRID-is/skills.git
-cd skills
+```sh
+git clone https://github.com/GRID-is/spreadsheet-skills.git
+cd spreadsheet-skills
 
 # Claude Code
 mkdir -p ~/.claude/skills
-cp -R skills/grid-development ~/.claude/skills/
+cp -R spreadsheet-skills/grid-development ~/.claude/skills/
 
 # Codex
 mkdir -p ~/.codex/skills
-cp -R skills/grid-development ~/.codex/skills/
+cp -R spreadsheet-skills/grid-development ~/.codex/skills/
 
 # Cursor
 mkdir -p ~/.cursor/skills
-cp -R skills/grid-development ~/.cursor/skills/
+cp -R spreadsheet-skills/grid-development ~/.cursor/skills/
 ```
 
 Agent Tools plugin
@@ -45,14 +45,14 @@ running it standalone.
 
 To install the plugin in Claude Code:
 
-``` sh
-claude plugin marketplace add GRID-is/skills
+```sh
+claude plugin marketplace add GRID-is/spreadsheet-skills
 claude plugin install agent-tools@grid
 ```
 
 To install the plugin in Codex:
 
-``` sh
-codex plugin marketplace add GRID-is/skills
+```sh
+codex plugin marketplace add GRID-is/spreadsheet-skills
 codex plugin add agent-tools@grid
 ```

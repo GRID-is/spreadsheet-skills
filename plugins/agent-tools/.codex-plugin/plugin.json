@@ -7,7 +7,7 @@
     "url": "https://grid.is"
   },
   "homepage": "https://docs.grid.is/agent-tools",
-  "repository": "https://github.com/GRID-is/skills",
+  "repository": "https://github.com/GRID-is/spreadsheet-skills",
   "keywords": ["spreadsheet", "xlsx", "excel", "grid", "mcp"],
   "mcpServers": "./.mcp.json",
   "skills": "./skills/",

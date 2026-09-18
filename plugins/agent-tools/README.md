@@ -8,17 +8,17 @@ MCP server via `npx` — no build step, no bundled dependencies — and ships a
 ## Install
 
 ```sh
-claude plugin marketplace add GRID-is/skills
+claude plugin marketplace add GRID-is/spreadsheet-skills
 claude plugin install agent-tools@grid
 ```
 
-Or from a running session: `/plugin marketplace add GRID-is/skills` then
+Or from a running session: `/plugin marketplace add GRID-is/spreadsheet-skills` then
 `/plugin install agent-tools@grid`.
 
 ## Install in Codex
 
 ```sh
-codex plugin marketplace add GRID-is/skills
+codex plugin marketplace add GRID-is/spreadsheet-skills
 codex plugin add agent-tools@grid
 ```
 
