@@ -40,9 +40,10 @@ expects for a tool's parameters. `run` validates the arguments, executes, and re
 model; `isError` is `true` for a failed call so you can hand the message back rather than throw.
 `captureRange` returns `image` as well.
 
-## Wire into the Claude API
+## Wire into a tool-calling API
 
-The Messages API takes tools as `{ name, description, input_schema }`. Build that list from the
+Every tool-calling API wants a name, a description and a JSON Schema. Anthropic's Messages API, used
+here as the example, takes them as `{ name, description, input_schema }`. Build that list from the
 GRID tools once. When the model returns a `tool_use` block, look the tool up by name, call `run`
 with the block's input, and return `text` as the `tool_result` content with `is_error` set from
 `isError`.

@@ -81,7 +81,7 @@ Content-Type: application/json
 | `framework` | no | e.g. "Next.js 15", "Vite + React" |
 | `scale` | no | Only if known: users, seats, workbooks |
 | `shipDate` | no | Only if the user mentioned a date |
-| `source` | no | `{ "agent": "<your name>", "skill": "grid-licensing" }` |
+| `source` | no | `{ "agent": "<agent name>", "skill": "grid-licensing" }`, where the agent name is the tool you are running as |
 
 `GET https://grid.is/api/agent/licensing` returns this contract as JSON if you want to confirm it.
 
@@ -138,7 +138,7 @@ curl -X POST https://grid.is/api/agent/licensing \
     "runtime": "Node 22 on Vercel, plus browser",
     "framework": "Next.js 15",
     "shipDate": "December 2026",
-    "source": { "agent": "Claude Code", "skill": "grid-licensing" }
+    "source": { "agent": "<agent name>", "skill": "grid-licensing" }
   }'
 ```
 
