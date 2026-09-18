@@ -127,7 +127,8 @@ For prompts that quote numbers, format them the way Excel does so "0.045" reads 
 ```js run
 import { format } from "numfmt";
 const cell = model.readCell("=B2");
-format(cell.z ?? "General", cell.v);     // "4.5%"
+const shown = format(cell.z ?? "General", cell.v);
+if (shown !== "4.5%") throw new Error(`Expected 4.5%, got ${shown}`);
 ```
 
 ## Reference files
