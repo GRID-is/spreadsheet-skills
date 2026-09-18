@@ -26,6 +26,19 @@ Every skill lists the others, so an agent with one installed knows the rest exis
 everything (`--all`) works but puts thirteen skills in the agent's context; most projects need one
 or two.
 
+### Upgrading from an earlier install
+
+These skills replace `grid-development` and the plugin's `spreadsheet` skill. Installing copies
+files and never removes them, so delete the old ones or an agent will read both:
+
+```sh
+rm -rf ~/.claude/skills/grid-development ~/.claude/skills/spreadsheet
+```
+
+Check the project-local `.claude/skills/` too. The old skill documents `model.reset()` and
+`model.writes()`, which the engine removed in v17, so an agent that matches it writes code against
+methods that no longer exist.
+
 Skills
 ------
 

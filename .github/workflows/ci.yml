@@ -4,12 +4,25 @@ on:
   pull_request:
   push:
     branches: [main]
+  # Callable so the sync workflow can run these checks against the branch it
+  # pushes. A pull request opened with the workflow's own token does not
+  # trigger `pull_request`, so that run has to be started explicitly.
+  workflow_call:
+    inputs:
+      ref:
+        description: Branch or SHA to check out. Defaults to the triggering ref.
+        required: false
+        type: string
 
 jobs:
   check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Empty on a pull_request or push run, where checkout's own default
+          # (the triggering commit) is the right thing.
+          ref: ${{ inputs.ref }}
       - uses: actions/setup-node@v4
         with:
           node-version: 22
