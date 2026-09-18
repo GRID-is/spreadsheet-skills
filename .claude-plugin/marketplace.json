@@ -8,10 +8,10 @@
   "plugins": [
     {
       "name": "agent-tools",
-      "description": "Load, read, edit, and recalculate .xlsx workbooks via the @grid-is/agent-tools MCP server.",
+      "description": "Load, inspect, edit, recalculate and debug .xlsx workbooks via the @grid-is/agent-tools MCP server, with the spreadsheet-mcp and excel-formula-debugging skills.",
       "source": "./plugins/agent-tools",
-      "version": "0.1.0",
-      "keywords": ["spreadsheet", "xlsx", "excel", "grid", "mcp"]
+      "version": "0.2.0",
+      "keywords": ["spreadsheet", "xlsx", "excel", "formulas", "grid", "mcp"]
     }
   ]
 }

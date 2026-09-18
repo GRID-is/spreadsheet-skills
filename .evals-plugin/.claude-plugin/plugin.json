@@ -1,0 +1,14 @@
+{
+  "name": "spreadsheet-skills",
+  "version": "0.0.0",
+  "description": "Every GRID skill plus the grid MCP server, assembled for claude plugin eval.",
+  "mcpServers": {
+    "grid": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@grid-is/agent-tools"
+      ]
+    }
+  }
+}
