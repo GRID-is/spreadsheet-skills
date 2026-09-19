@@ -249,8 +249,9 @@ Written and verified against:
 
 The engine is under continuous development. Before relying on a method:
 
-1. Check the installed version: `node -p "require('@grid-is/spreadsheet-engine/package.json').version"`
-   or read `node_modules/@grid-is/spreadsheet-engine/package.json`.
+1. Check the installed version: `npm ls @grid-is/spreadsheet-engine --depth=0`, or read
+   `node_modules/@grid-is/spreadsheet-engine/package.json`. The package does not export
+   `./package.json`, so `require('@grid-is/spreadsheet-engine/package.json')` throws.
 2. If it is newer than the version above, grep `node_modules/@grid-is/spreadsheet-engine/dist/index.d.ts`
    for the method and trust that file over this skill.
 3. If the package is not installed yet, the latest docs are at <https://docs.grid.is/spreadsheet-engine/>

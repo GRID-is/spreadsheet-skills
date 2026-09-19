@@ -32,12 +32,14 @@ These skills replace `grid-development` and the plugin's `spreadsheet` skill. In
 files and never removes them, so delete the old ones or an agent will read both:
 
 ```sh
-rm -rf ~/.claude/skills/grid-development ~/.claude/skills/spreadsheet
+rm -rf ~/.claude/skills/grid-development ~/.claude/skills/spreadsheet   # Claude Code
+rm -rf ~/.codex/skills/grid-development ~/.codex/skills/spreadsheet     # Codex
+rm -rf ~/.cursor/skills/grid-development ~/.cursor/skills/spreadsheet   # Cursor
 ```
 
-Check the project-local `.claude/skills/` too. The old skill documents `model.reset()` and
-`model.writes()`, which the engine removed in v17, so an agent that matches it writes code against
-methods that no longer exist.
+Check the project-local `.claude/skills/`, `.codex/skills/` and `.cursor/skills/` too. The old
+skill documents `model.reset()` and `model.writes()`, which the engine removed in v17, so an agent
+that matches it writes code against methods that no longer exist.
 
 Skills
 ------
