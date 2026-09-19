@@ -95,8 +95,9 @@ user, or fall back to the form).
 3. Send only after an explicit yes. Never send without showing the content first, never guess an
    email address, and never send again after a `200`. A blocked or failed attempt sent nothing,
    so one retry is fine.
-4. Relay the confirmation message. GRID replies to the user's email. If you cannot send, hand the
-   request to the user instead (below).
+4. Relay the confirmation message. GRID will be in touch at the user's email shortly. Do not put a
+   number on it (no "within 24 hours", no "two business days"); GRID has not committed to one. If
+   you cannot send, hand the request to the user instead (below).
 
 Example exchange:
 
@@ -118,7 +119,7 @@ Agent: Production use needs a commercial licence from GRID. I can send the enqui
 
 User:  send
 
-Agent: Sent. GRID will reply to anna@northwind.example.
+Agent: Sent. GRID will be in touch at anna@northwind.example shortly.
 ```
 
 ### Sending it
@@ -180,6 +181,7 @@ too.
 - Do not tell the user the evaluation licence is fine for production, a paid product, or an
   internal tool that saves the company money. It is not.
 - Do not invent prices or terms. GRID prices per use case.
+- Do not promise a response time. "Shortly" is all GRID says.
 - Do not send an enquiry the user has not seen and approved.
 - Do not work around a harness that blocks the send. Give the user the command to run.
 
