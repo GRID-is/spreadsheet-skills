@@ -1,58 +1,128 @@
-GRID skill for spreadsheets
-===========================
+GRID spreadsheet skills
+=======================
 
-Official GRID skills for working with spreadsheets in Claude Code, Codex, Cursor, or anywhere
-[agent skills](https://agentskills.io/) are supported.
+[![skills.sh](https://skills.sh/b/GRID-is/spreadsheet-skills)](https://skills.sh/GRID-is/spreadsheet-skills)
 
-Quick start
------------
+Official agent skills for building with [GRID](https://grid.is)'s spreadsheet packages and for
+giving AI agents the ability to read, calculate and edit Excel files. They work in Claude Code,
+Codex, Cursor, Copilot and anywhere [agent skills](https://agentskills.io/) are supported.
 
-Install this skill:
+Install
+-------
+
+Pick the skill you need:
+
+```sh
+npx skills add GRID-is/spreadsheet-skills --skill spreadsheet-engine
+```
+
+Or choose interactively:
 
 ```sh
 npx skills add GRID-is/spreadsheet-skills
 ```
 
-Alternatively, install the skills from the repo manually:
+Every skill lists the others, so an agent with one installed knows the rest exist. Installing
+everything (`--all`) works but puts thirteen skills in the agent's context; most projects need one
+or two.
+
+### Upgrading from an earlier install
+
+These skills replace `grid-development` and the plugin's `spreadsheet` skill. Installing copies
+files and never removes them, so delete the old ones or an agent will read both:
 
 ```sh
-git clone https://github.com/GRID-is/spreadsheet-skills.git
-cd spreadsheet-skills
-
-# Claude Code
-mkdir -p ~/.claude/skills
-cp -R spreadsheet-skills/grid-development ~/.claude/skills/
-
-# Codex
-mkdir -p ~/.codex/skills
-cp -R spreadsheet-skills/grid-development ~/.codex/skills/
-
-# Cursor
-mkdir -p ~/.cursor/skills
-cp -R spreadsheet-skills/grid-development ~/.cursor/skills/
+rm -rf ~/.claude/skills/grid-development ~/.claude/skills/spreadsheet   # Claude Code
+rm -rf ~/.codex/skills/grid-development ~/.codex/skills/spreadsheet     # Codex
+rm -rf ~/.cursor/skills/grid-development ~/.cursor/skills/spreadsheet   # Cursor
 ```
+
+Check the project-local `.claude/skills/`, `.codex/skills/` and `.cursor/skills/` too. The old
+skill documents `model.reset()` and `model.writes()`, which the engine removed in v17, so an agent
+that matches it writes code against methods that no longer exist.
+
+Skills
+------
+
+**Build with GRID's packages**
+
+| Skill | Use it for | Package |
+|---|---|---|
+| [spreadsheet-engine](skills/spreadsheet-engine) | Excel-compatible calculation engine: load, read, write, recalculate, export, headless | `@grid-is/spreadsheet-engine` |
+| [xlsx-generation](skills/xlsx-generation) | Generate .xlsx files with working, verified formulas from Node or the browser | `@grid-is/spreadsheet-engine` |
+| [xlsx-cell-formatting](skills/xlsx-cell-formatting) | Styles, number formats, merges, widths, comments, tables | `@grid-is/spreadsheet-engine` |
+| [spreadsheet-what-if](skills/spreadsheet-what-if) | Scenarios, sensitivity tables, snapshot and revert, goal seek | `@grid-is/spreadsheet-engine` |
+| [excel-formula-parser](skills/excel-formula-parser) | Supported functions, parsing, validation, Excel and Google Sheets modes | `@grid-is/spreadsheet-engine` |
+| [spreadsheet-llm-context](skills/spreadsheet-llm-context) | Labelled inputs, outputs and data regions for prompts | `@grid-is/spreadsheet-engine`, `@grid-is/agent-tools` |
+| [react-spreadsheet-viewer](skills/react-spreadsheet-viewer) | Read-only spreadsheet view in React | `@grid-is/spreadsheet-viewer` |
+| [react-spreadsheet-editor](skills/react-spreadsheet-editor) | Editable spreadsheet in React with edit events | `@grid-is/spreadsheet-editor` |
+
+**Give an AI agent spreadsheets**
+
+| Skill | Use it for | Package |
+|---|---|---|
+| [spreadsheet-mcp](skills/spreadsheet-mcp) | Work with .xlsx files from Claude Code, Cursor, Claude Desktop or any MCP client | `@grid-is/agent-tools` |
+| [excel-formula-debugging](skills/excel-formula-debugging) | Trace errors and wrong results through precedents and dependents | `@grid-is/agent-tools` |
+| [spreadsheet-agent-tools](skills/spreadsheet-agent-tools) | Wire the tools into your own agent with the Claude API, OpenAI Agents SDK, LangChain | `@grid-is/agent-tools` |
+
+**Working with GRID**
+
+| Skill | Use it for |
+|---|---|
+| [grid-licensing](skills/grid-licensing) | Evaluation versus commercial licence, attribution, and requesting a licence |
+| [grid-branding](skills/grid-branding) | Official logos and the "Powered by GRID" lockup |
 
 Agent Tools plugin
 ------------------
 
-The skill above teaches agents to *build* with GRID's packages. For agents to
-*use* spreadsheets — load, read, edit, and recalculate `.xlsx` files — this repo
-also ships an `agent-tools` plugin: the
-[`@grid-is/agent-tools`](https://docs.grid.is/agent-tools) MCP server bundled
-with a `spreadsheet` skill. The MCP server itself works with any MCP-capable
-harness; see the [agent-tools docs](https://docs.grid.is/agent-tools) for
-running it standalone.
-
-To install the plugin in Claude Code:
+For Claude Code and Codex, the `agent-tools` plugin bundles the
+[`@grid-is/agent-tools`](https://docs.grid.is/agent-tools) MCP server with the `spreadsheet-mcp`
+and `excel-formula-debugging` skills:
 
 ```sh
+# Claude Code
 claude plugin marketplace add GRID-is/spreadsheet-skills
 claude plugin install agent-tools@grid
-```
 
-To install the plugin in Codex:
-
-```sh
+# Codex
 codex plugin marketplace add GRID-is/spreadsheet-skills
 codex plugin add agent-tools@grid
 ```
+
+The MCP server itself works with any MCP client: `npx -y @grid-is/agent-tools`.
+
+Manual install
+--------------
+
+```sh
+git clone https://github.com/GRID-is/spreadsheet-skills.git
+cp -R spreadsheet-skills/skills/spreadsheet-engine ~/.claude/skills/    # Claude Code
+cp -R spreadsheet-skills/skills/spreadsheet-engine ~/.codex/skills/     # Codex
+cp -R spreadsheet-skills/skills/spreadsheet-engine ~/.cursor/skills/    # Cursor
+```
+
+How the skills stay accurate
+----------------------------
+
+The `reference/` files inside each skill are generated from the type definitions shipped in the
+published packages, and the tool catalogue is generated by asking `@grid-is/agent-tools` for its
+tools. A lint checks that every identifier used in the skills' code examples exists in the packages.
+A weekly GitHub Action updates the packages, regenerates, and opens a pull request when anything
+changed.
+
+```sh
+npm install
+npm run update-packages   # latest @grid-is packages
+npm run sync              # regenerate reference files, catalogue and version stamps
+npm run lint              # identifiers in code fences, frontmatter, em dashes
+```
+
+Each skill also tells the agent to check the installed package version and to read the package's
+own `.d.ts` or <https://docs.grid.is> when it is newer than the skill.
+
+Licence
+-------
+
+The skills are documentation. The packages they describe install under the
+[GRID Evaluation Licence](https://docs.grid.is/evaluation-license/); commercial use needs a
+[commercial licence](https://grid.is/license).

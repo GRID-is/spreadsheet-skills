@@ -1,0 +1,30 @@
+{
+  "$schema": "https://skills.sh/schemas/skills.sh.schema.json",
+  "notGrouped": "bottom",
+  "groupings": [
+    {
+      "title": "Build with GRID's packages",
+      "description": "Excel-compatible spreadsheet engine, viewer and editor for JavaScript, TypeScript and React.",
+      "skills": [
+        "spreadsheet-engine",
+        "xlsx-generation",
+        "xlsx-cell-formatting",
+        "spreadsheet-what-if",
+        "excel-formula-parser",
+        "spreadsheet-llm-context",
+        "react-spreadsheet-viewer",
+        "react-spreadsheet-editor"
+      ]
+    },
+    {
+      "title": "Give an AI agent spreadsheets",
+      "description": "Load, inspect, edit, recalculate and debug .xlsx files from Claude Code, Cursor, any MCP client, or your own agent.",
+      "skills": ["spreadsheet-mcp", "excel-formula-debugging", "spreadsheet-agent-tools"]
+    },
+    {
+      "title": "Working with GRID",
+      "description": "Licensing and branding. Install only if you need them.",
+      "skills": ["grid-licensing", "grid-branding"]
+    }
+  ]
+}
