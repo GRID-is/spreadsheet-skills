@@ -71,9 +71,9 @@ Everything below is on `Model` or `Workbook` unless noted. Full signatures and J
 | Load an .xlsx file (Node) | `Model.fromXLSXFile(path, options?)` |
 | Load .xlsx bytes (browser or Node) | `Model.fromXLSX(bufferOrArrayBuffer, "name.xlsx", options?)` |
 | Load JSON | `Model.fromJSF(jsf)` or `Model.fromCsf(csf)` |
-| Start empty | `Model.empty("name.xlsx", options?)` |
+| Start empty | `Model.empty("name.xlsx")` (filename only, no options; the workbook is in GRID mode) |
 | Load fast, structure only, no recalc | option `{ readOnly: true }` on any loader |
-| Force Excel or Google Sheets semantics | option `{ mode: MODE_EXCEL }` or `{ mode: MODE_GOOGLE }` |
+| Force Excel or Google Sheets semantics | option `{ mode: MODE_EXCEL }` or `{ mode: MODE_GOOGLE }` on any loader or `addWorkbook`, not on `Model.empty` |
 | Load CSV | parse it yourself, then `writeMultiple` into `Model.empty` (recipe below) |
 | Several workbooks with cross references | `model.addWorkbookFromXLSXFile`, `addWorkbookFromXLSX`, `addWorkbook(jsf)`, `removeWorkbook`, `getWorkbooks` |
 | Read one value | `model.readValue("=B2", fallback?)` |
@@ -209,8 +209,9 @@ URL.revokeObjectURL(url);
 ## Excel and Google Sheets modes
 
 The engine implements both function sets. An .xlsx file loads in the mode matching its originating
-application; a blank model defaults to GRID's own mode. Pass `{ mode: MODE_EXCEL }` or
-`{ mode: MODE_GOOGLE }` to `Model.empty` or any loader to pin it. `functionSignatures(mode)` lists
+application; `Model.empty` always gives GRID's own mode and takes no options. To pin a mode, pass
+`{ mode: MODE_EXCEL }` or `{ mode: MODE_GOOGLE }` to a loader or to `addWorkbook`; to start blank in
+Excel mode, use `Model.fromJSF` with a one-sheet JSF and the option. `functionSignatures(mode)` lists
 what each mode supports; v17.1 reports 467 functions for Excel and 500 for Google Sheets, including
 `XLOOKUP`, `LET`, `LAMBDA` and `ARRAYFORMULA`.
 

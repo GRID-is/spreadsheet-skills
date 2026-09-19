@@ -18,12 +18,16 @@ import { fileURLToPath } from "node:url";
 import ts from "typescript";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+// One entry per import specifier, so a subpath such as "@grid-is/agent-tools/tools"
+// is checked against its own type file and not against the root's exports.
 const PACKAGES = {
-  "@grid-is/spreadsheet-engine": ["dist/index.d.ts"],
-  "@grid-is/spreadsheet-viewer": ["dist/index.d.ts"],
-  "@grid-is/spreadsheet-editor": ["dist/index.d.ts"],
-  "@grid-is/agent-tools": ["dist/index.d.ts", "dist/tools.d.ts"],
+  "@grid-is/spreadsheet-engine": "dist/index.d.ts",
+  "@grid-is/spreadsheet-viewer": "dist/index.d.ts",
+  "@grid-is/spreadsheet-editor": "dist/index.d.ts",
+  "@grid-is/agent-tools": "dist/index.d.ts",
+  "@grid-is/agent-tools/tools": "dist/tools.d.ts",
 };
+const packageDir = (specifier) => specifier.split("/").slice(0, 2).join("/");
 
 // Methods that appear in examples but belong to JavaScript, Node, the DOM,
 // React, zod or the MCP SDK rather than to a GRID package. The lint rejects
@@ -51,31 +55,35 @@ const KNOWN_METHODS = new Set(
     .filter(Boolean),
 );
 
-// Collect exported names and member names per package.
-function collect(pkg, dts) {
-  const file = path.join(ROOT, "node_modules", pkg, dts);
+// Collect exported names and member names for one import specifier.
+// Only the entry file decides what is public. Relative imports are followed
+// for member and static names, but their export clauses are ignored: a bundled
+// chunk such as agent-tools' index-*.d.ts re-exports its declarations under
+// minified aliases (`runFormula as C`) that the package does not expose.
+function collect(specifier, dts) {
+  const file = path.join(ROOT, "node_modules", packageDir(specifier), dts);
   if (!fs.existsSync(file)) return { exported: new Set(), members: new Set(), statics: new Map() };
   const seen = new Set();
   const exported = new Set();
   const members = new Set();
   const statics = new Map();
-  const visitFile = (f) => {
+  const visitFile = (f, isEntry) => {
     if (seen.has(f) || !fs.existsSync(f)) return;
     seen.add(f);
     const src = ts.createSourceFile(f, fs.readFileSync(f, "utf8"), ts.ScriptTarget.Latest, true);
     for (const n of src.statements) {
-      if (ts.isExportDeclaration(n) && n.exportClause && ts.isNamedExports(n.exportClause)) {
+      if (isEntry && ts.isExportDeclaration(n) && n.exportClause && ts.isNamedExports(n.exportClause)) {
         for (const e of n.exportClause.elements) exported.add(e.name.text);
       }
       if (ts.isImportDeclaration(n) && n.moduleSpecifier.text.startsWith(".")) {
-        visitFile(path.resolve(path.dirname(f), n.moduleSpecifier.text.replace(/\.js$/, ".d.ts")));
+        visitFile(path.resolve(path.dirname(f), n.moduleSpecifier.text.replace(/\.js$/, ".d.ts")), false);
         // An import is not a re-export. A bundled entry point imports its own
         // internals (Style, CalcProps, Buffer) and exports only some of them,
         // so only the export clause above decides what is public. Where it
         // renames (`export { ready as formulaParserReady }`) the public name is
         // the exported one, and the local name stays internal.
       }
-      if (n.modifiers?.some((m) => m.kind === ts.SyntaxKind.ExportKeyword)) {
+      if (isEntry && n.modifiers?.some((m) => m.kind === ts.SyntaxKind.ExportKeyword)) {
         if (ts.isVariableStatement(n)) n.declarationList.declarations.forEach((d) => exported.add(d.name.getText()));
         else if (n.name) exported.add(n.name.getText());
       }
@@ -99,7 +107,7 @@ function collect(pkg, dts) {
       }
     }
   };
-  visitFile(file);
+  visitFile(file, true);
   return { exported, members, statics };
 }
 
@@ -109,16 +117,13 @@ const allStatics = new Map();
 // @grid-is/agent-tools installs the engine under this alias; examples that
 // share a Model with the tools import it from there.
 const ALIASES = { "@grid-is/apiary": "@grid-is/spreadsheet-engine" };
-for (const [pkg, files] of Object.entries(PACKAGES)) {
-  api[pkg] = { exported: new Set() };
-  for (const dts of files) {
-    const c = collect(pkg, dts);
-    c.exported.forEach((n) => api[pkg].exported.add(n));
-    c.members.forEach((n) => allMembers.add(n));
-    for (const [cls, names] of c.statics) {
-      if (!allStatics.has(cls)) allStatics.set(cls, new Set());
-      names.forEach((n) => allStatics.get(cls).add(n));
-    }
+for (const [specifier, dts] of Object.entries(PACKAGES)) {
+  const c = collect(specifier, dts);
+  api[specifier] = { exported: c.exported };
+  c.members.forEach((n) => allMembers.add(n));
+  for (const [cls, names] of c.statics) {
+    if (!allStatics.has(cls)) allStatics.set(cls, new Set());
+    names.forEach((n) => allStatics.get(cls).add(n));
   }
 }
 // Members also count as known methods; ".readValue(" is fine anywhere.
@@ -148,7 +153,7 @@ function lintFences(file, text) {
     const startLine = text.slice(0, m.index).split("\n").length + 1;
     const lineOf = (idx) => startLine + code.slice(0, idx).split("\n").length - 1;
 
-    const imp = /import\s+(?:type\s+)?\{([^}]*)\}\s+from\s+["'](@grid-is\/[\w-]+)(?:\/tools)?["']/g;
+    const imp = /import\s+(?:type\s+)?\{([^}]*)\}\s+from\s+["'](@grid-is\/[\w-]+(?:\/[\w-]+)?)["']/g;
     let im;
     while ((im = imp.exec(code))) {
       const pkg = ALIASES[im[2]] ?? im[2];
