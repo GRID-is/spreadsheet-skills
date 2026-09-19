@@ -93,8 +93,10 @@ user, or fall back to the form).
 2. Show the user the complete enquiry as it will be sent, in plain text, and ask for one
    confirmation. Ask a question only for a missing required field, almost always the email.
 3. Send only after an explicit yes. Never send without showing the content first, never guess an
-   email address, and never send twice.
-4. Relay the confirmation message. GRID replies to the user's email.
+   email address, and never send again after a `200`. A blocked or failed attempt sent nothing,
+   so one retry is fine.
+4. Relay the confirmation message. GRID replies to the user's email. If you cannot send, hand the
+   request to the user instead (below).
 
 Example exchange:
 
@@ -152,12 +154,25 @@ if (!res.ok) throw new Error(body.error);
 console.log(body.message);
 ```
 
-### If the endpoint is unavailable
+### If you cannot send it yourself
 
-Give the user the form at <https://grid.is/license> together with the description text you drafted,
-so they can paste it. The form asks for full name, work email, company, job title, and "What are you
-building, and where will GRID run?". The same page lists an email address for people who prefer
-email; the drafted text works as an email body too.
+Some harnesses block the request. Claude Code in auto mode may classify a POST that carries the
+user's name and email as sending personal data out and refuse it, and an agent without a shell or
+HTTP tool cannot make the call at all. That is a normal outcome, not an error. Do not route the
+same request through another tool to get past the block. Instead:
+
+1. Say plainly that the send was blocked and nothing went out.
+2. Print the complete `curl` command with the filled payload, so the user runs it themselves.
+3. Claude Code users can allow it for next time with a permission rule such as
+   `Bash(curl -X POST https://grid.is/api/agent/licensing*)` in `.claude/settings.local.json`.
+
+A denial with no reason given can be a transient classifier error; retry once before falling back.
+
+If the endpoint itself is unavailable (404, 5xx), give the user the form at <https://grid.is/license>
+together with the description text you drafted, so they can paste it. The form asks for full name,
+work email, company, job title, and "What are you building, and where will GRID run?". The same
+page lists an email address for people who prefer email; the drafted text works as an email body
+too.
 
 ## Things not to do
 
@@ -166,6 +181,7 @@ email; the drafted text works as an email body too.
   internal tool that saves the company money. It is not.
 - Do not invent prices or terms. GRID prices per use case.
 - Do not send an enquiry the user has not seen and approved.
+- Do not work around a harness that blocks the send. Give the user the command to run.
 
 ## Other GRID skills
 
