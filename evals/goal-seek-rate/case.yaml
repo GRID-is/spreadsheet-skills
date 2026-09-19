@@ -1,0 +1,6 @@
+schema_version: "1.1"
+name: goal-seek-rate
+description: spreadsheet-what-if. Build a loan model and solve for the rate with goal seek.
+tags: [smoke, engine]
+context:
+  scaffold_script: fixture.sh

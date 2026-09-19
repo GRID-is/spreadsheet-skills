@@ -29,8 +29,9 @@ const all = functionSignatures();                   // every function in any mod
 
 Object.keys(excel).length;                          // 467 in v17.1
 Object.keys(google).length;                         // 500 in v17.1
-"QUERY" in google;                                  // true; Google Sheets only
-"XLOOKUP" in excel && "LET" in excel && "LAMBDA" in excel;   // true
+
+if (!("QUERY" in google) || "QUERY" in excel) throw new Error("QUERY is Google Sheets only");
+if (!("XLOOKUP" in excel && "LET" in excel && "LAMBDA" in excel)) throw new Error("Missing function");
 ```
 
 The result is an object keyed by upper-case function name. Each value is an array of signature
@@ -67,14 +68,18 @@ supported, and evaluates. Use it for user input and for LLM-generated formulas.
 ```js setup
 const model = await Model.fromXLSXFile("model.xlsx");
 
-model.analyzeAndFixFormula("=SUM(B2:B4)");
+const ok = model.analyzeAndFixFormula("=SUM(B2:B4)");
 // { status: "ok", formula: "=SUM(B2:B4)", result: 17, references: [...], functions: ["SUM"] }
 
-model.analyzeAndFixFormula("=SUMM(B2:B4)");
+const bad = model.analyzeAndFixFormula("=SUMM(B2:B4)");
 // { status: "has_problems", problems: [{ type: "uses_unsupported_functions", unsupportedFunctions: ["SUMM"] }] }
 
-model.analyzeAndFixFormula("=SUM(B2:B4");
+const broken = model.analyzeAndFixFormula("=SUM(B2:B4");
 // { status: "unparsable_formula" }
+
+if (ok.status !== "ok" || bad.status !== "has_problems" || broken.status !== "unparsable_formula") {
+  throw new Error("analyzeAndFixFormula statuses changed");
+}
 ```
 
 Pass `{ sheetName }` to resolve unqualified references against a sheet other than the first. The
@@ -101,7 +106,8 @@ references work: `=[budget.xlsx]Sheet1!A1`.
 
 ```js run
 import { VOLATILES } from "@grid-is/spreadsheet-engine";
-VOLATILES.has("NOW");       // true; NOW, TODAY, RAND, RANDARRAY, RANDBETWEEN and others
+if (!VOLATILES.has("NOW")) throw new Error("NOW should be volatile");
+// NOW, TODAY, RAND, RANDARRAY, RANDBETWEEN and others
 ```
 
 Volatile functions recalculate on every pass. `model.recalculate(CHANGED_ONLY)` skips them, and
@@ -110,10 +116,17 @@ Volatile functions recalculate on every pass. `model.recalculate(CHANGED_ONLY)` 
 ## Rewriting references
 
 ```js run
-model.rewriteFormulaAfterMove("=SUM(Sheet1!A1:A3)", "Sheet1!A1:A3", "Sheet1!C5:C7");
+const moved = model.rewriteFormulaAfterMove(
+  "=SUM(Sheet1!A1:A3)",
+  "[model.xlsx]Sheet1!A1:A3",           // both ranges need the workbook prefix
+  "[model.xlsx]Sheet1!C5:C7",
+);
+if (moved !== "=SUM(Sheet1!C5:C7)") throw new Error(`Not rewritten: ${moved}`);
 ```
 
-Returns the formula adjusted for a range move. Structural edits on the workbook (`insertRows`,
+Returns the formula adjusted for a range move. Give `from` and `to` a `[workbook.xlsx]` prefix. A
+bare `Sheet1!A1:A3` matches nothing and the formula comes back unchanged, with no error. Structural
+edits on the workbook (`insertRows`,
 `deleteColumns`, `moveCells`, `reorderRows`) rewrite the workbook's own formulas automatically and
 return a `RewriteFormula` function for formulas in other workbooks of the same model. The lower-level
 `getReplaceSheetReferencesFn`, `getReplaceTableReferencesFn` and `getReplaceWorkbookFn` are in the

@@ -113,11 +113,25 @@ jobs:
           echo "The pull request was opened so the failure is reviewable, but this run failed."
           exit 1
 
-  # A pull request opened with the workflow's own token does not trigger the
-  # `pull_request` event, so CI never runs on it by itself. Start it here.
+  # A pull request opened with the workflow's own token does not trigger other
+  # workflows, so nothing runs against the sync branch by itself. Both jobs
+  # below are started from here instead.
+
+  # Runs even when the sync job failed, because a stale reference is exactly
+  # what these checks describe.
   checks:
     needs: sync
-    if: contains(fromJSON('["created", "updated"]'), needs.sync.outputs.pr-operation)
+    if: always() && contains(fromJSON('["created", "updated"]'), needs.sync.outputs.pr-operation)
     uses: ./.github/workflows/ci.yml
     with:
       ref: sync/api-reference
+
+  # Gated on the sync job succeeding, because a full eval run costs real money
+  # and a known-stale reference is not worth measuring.
+  evals:
+    needs: sync
+    if: contains(fromJSON('["created", "updated"]'), needs.sync.outputs.pr-operation)
+    uses: ./.github/workflows/evals.yml
+    with:
+      ref: sync/api-reference
+    secrets: inherit
