@@ -14,9 +14,6 @@ Things only a person with the right access can do, in the order that avoids brok
 - [ ] Enable Actions for the repo and check that the `CI` workflow runs on the merge. The
       `Sync API reference` workflow needs "Allow GitHub Actions to create and approve pull
       requests" turned on (Settings, Actions, General, Workflow permissions).
-- [ ] Add an `ANTHROPIC_API_KEY` repository secret for the `Skill evals` workflow (Settings,
-      Secrets and variables, Actions). Without it the weekly eval run and the eval job on the sync
-      PR fail at the first model call. Budget: roughly $2 to $5 per full run at three runs per case.
 - [ ] Close PR #3 (branding section). Its content is now the `grid-branding` skill and the
       attribution sections in the React skills, updated for licence v1.1, which requires attribution.
 - [ ] Optional: in the engine, viewer, editor and agent-tools release workflows, add a step that

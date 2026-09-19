@@ -1,5 +1,3 @@
 node_modules/
 .DS_Store
 .examples-run/
-.evals-plugin/
-evals/results/

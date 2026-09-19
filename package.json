@@ -11,8 +11,7 @@
     "sync:check": "node scripts/generate-api-reference.mjs --check && node scripts/generate-tools-reference.mjs --check && node scripts/sync-plugin-skills.mjs --check",
     "lint": "node scripts/lint-skills.mjs",
     "update-packages": "npm install --save-dev @grid-is/spreadsheet-engine@latest @grid-is/spreadsheet-viewer@latest @grid-is/spreadsheet-editor@latest @grid-is/agent-tools@latest",
-    "test:examples": "node scripts/run-examples.mjs",
-    "test:evals": "node scripts/run-evals.mjs"
+    "test:examples": "node scripts/run-examples.mjs"
   },
   "devDependencies": {
     "@grid-is/agent-tools": "^0.3.0",
