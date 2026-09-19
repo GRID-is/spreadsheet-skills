@@ -30,6 +30,11 @@ Things only a person with the right access can do, in the order that avoids brok
 
 ## GRID-web
 
+- [ ] Confirm the Upstash Redis store is attached to the project with `KV_REST_API_URL` and
+      `KV_REST_API_TOKEN` in every environment. Without them the enquiry routes fall back to a
+      per-instance limiter. Vercel Firewall rate limiting cannot be used here: the site is behind
+      Cloudflare, so Vercel keys on the edge IP, and custom header keys are Enterprise only.
+- [ ] After deploy, send six empty POSTs to `/api/agent/licensing`; the sixth should be a 429.
 - [ ] Deploy the routes in `src/app/api/agent/licensing` and `src/app/api/forms/enquiry`. The
       website route was renamed, so this must ship together with the form components that call it
       (they are in the same change).
@@ -62,5 +67,3 @@ Things only a person with the right access can do, in the order that avoids brok
       released with docs, add a `spreadsheet-pivot-tables` skill.
 - [ ] If Google Sheets traffic justifies it, split a `google-sheets-formulas` skill out of
       `excel-formula-parser`. The mode constants and function counts are already documented there.
-- [ ] Durable rate limiting on the agent licensing route (Upstash or Vercel KV) if the channel ever
-      gets noisy. Muting the `licensing-agent` Postmark tag is the stopgap.
