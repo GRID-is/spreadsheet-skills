@@ -42,10 +42,7 @@ version and runtime environment. No spreadsheet data, no personal data. It fails
 The packages also print a licence notice on load. Do not remove or suppress either. Both are absent
 from the commercial builds.
 
-**Commercial packages.** A commercial licence ships the full packages, `@grid-is/apiary` (engine),
-`@grid-is/mondrian-react` (viewer) and `@grid-is/editor` (editor), from a private npm scope with a
-token. `@grid-is/agent-tools` can run on a licensed engine through a package override. Pricing is
-per use case; there is no public price list.
+**Pricing.** Per use case. There is no public price list.
 
 **Where to apply:** <https://grid.is/license>, or the agent endpoint below.
 

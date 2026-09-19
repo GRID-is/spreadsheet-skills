@@ -55,11 +55,12 @@ which errors were resolved and whether any new ones appeared.
 inspect(reference: "Summary!D10")
 ```
 
-Returns the formula, calculated value, number format, style and hyperlink. The formula text shows
-every input directly. To judge whether the result is right, reason about the function's behaviour
-against the intent, whether the inputs hold the values they should, and whether the ranges cover
-the intended rows. If the formula reads correctly but the value is wrong, the problem is upstream:
-go back to `precedents`.
+Returns the formula, calculated value, number format, style and hyperlink. A merged cell also
+reports its merged range, and a cell covered by a merge names the anchor cell it is merged into.
+The formula text shows every input directly. To judge whether the result is right, reason about
+the function's behaviour against the intent, whether the inputs hold the values they should, and
+whether the ranges cover the intended rows. If the formula reads correctly but the value is wrong,
+the problem is upstream: go back to `precedents`.
 
 `viewRange` with `show: "formula"` renders a block with a legend key per distinct formula pattern
 (compared in R1C1 form). A filled-down column shares one key, so a hand-edited cell or a hardcoded
