@@ -42,7 +42,7 @@ const KNOWN_METHODS = new Set(
    has get set add delete clear size
    arrayBuffer json text blob formData ok status
    readFile writeFile readFileSync writeFileSync existsSync mkdirSync readdirSync stat
-   createElement getElementById querySelector appendChild removeChild click createObjectURL revokeObjectURL addEventListener removeEventListener setAttribute
+   createElement getElementById querySelector appendChild removeChild click createObjectURL revokeObjectURL addEventListener removeEventListener setAttribute preventDefault
    useState useEffect useRef useMemo useCallback useReducer render createRoot
    object string number boolean array optional describe toJSONSchema
    isArray isFinite isNaN isInteger max min round floor ceil abs random now

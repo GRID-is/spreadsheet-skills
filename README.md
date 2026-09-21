@@ -23,7 +23,7 @@ npx skills add GRID-is/spreadsheet-skills
 ```
 
 Every skill lists the others, so an agent with one installed knows the rest exist. Installing
-everything (`--all`) works but puts thirteen skills in the agent's context; most projects need one
+everything (`--all`) works but puts fourteen skills in the agent's context; most projects need one
 or two.
 
 ### Upgrading from an earlier install
@@ -64,6 +64,7 @@ Skills
 | [spreadsheet-mcp](skills/spreadsheet-mcp) | Work with .xlsx files from Claude Code, Cursor, Claude Desktop or any MCP client | `@grid-is/agent-tools` |
 | [excel-formula-debugging](skills/excel-formula-debugging) | Trace errors and wrong results through precedents and dependents | `@grid-is/agent-tools` |
 | [spreadsheet-agent-tools](skills/spreadsheet-agent-tools) | Wire the tools into your own agent with the Claude API, OpenAI Agents SDK, LangChain | `@grid-is/agent-tools` |
+| [spreadsheet-ai-assistant](skills/spreadsheet-ai-assistant) | Chat panel next to an editable spreadsheet in React, both on one model | `@grid-is/spreadsheet-editor`, `@grid-is/spreadsheet-engine`, `@grid-is/agent-tools` |
 
 **Working with GRID**
 

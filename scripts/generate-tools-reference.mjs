@@ -30,6 +30,7 @@ const OUTPUTS = [
   "skills/spreadsheet-mcp/reference/tools.md",
   "skills/spreadsheet-agent-tools/reference/tools.md",
   "skills/excel-formula-debugging/reference/tools.md",
+  "skills/spreadsheet-ai-assistant/reference/tools.md",
 ];
 
 const version = JSON.parse(fs.readFileSync(path.join(ROOT, "node_modules/@grid-is/agent-tools/package.json"), "utf8")).version;

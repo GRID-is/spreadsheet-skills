@@ -365,6 +365,31 @@ export const TARGETS = [
       },
     ],
   },
+  // The assistant skill installs self-contained: the editor API and the
+  // browser tools module it wires together.
+  {
+    package: EDITOR,
+    dts: "dist/index.d.ts",
+    outputs: [
+      {
+        file: "skills/spreadsheet-ai-assistant/reference/editor-api.md",
+        title: "@grid-is/spreadsheet-editor API",
+        include: ["SpreadsheetEditor", "rest"],
+      },
+    ],
+  },
+  {
+    package: AGENT_TOOLS,
+    dts: "dist/tools.d.ts",
+    outputs: [
+      {
+        file: "skills/spreadsheet-ai-assistant/reference/tools-module.md",
+        title: "@grid-is/agent-tools/tools API",
+        intro: "The tools alone, without the MCP server or file session. They run against an in-memory engine `Model`, in Node or a browser bundle.",
+        include: ["rest"],
+      },
+    ],
+  },
 ];
 
 // The catalogue block rendered into every SKILL.md, so an agent that has one
@@ -434,6 +459,11 @@ export const CATALOGUE = {
           name: "spreadsheet-agent-tools",
           summary: "Wire GRID's spreadsheet tools into your own agent with the Claude API, OpenAI Agents SDK or LangChain.",
           packages: [AGENT_TOOLS],
+        },
+        {
+          name: "spreadsheet-ai-assistant",
+          summary: "Chat panel next to an editable spreadsheet in React, both on one model: the agent edits what the user sees.",
+          packages: [EDITOR, ENGINE, AGENT_TOOLS],
         },
       ],
     },

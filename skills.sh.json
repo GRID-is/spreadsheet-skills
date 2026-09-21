@@ -19,7 +19,7 @@
     {
       "title": "Give an AI agent spreadsheets",
       "description": "Load, inspect, edit, recalculate and debug .xlsx files from Claude Code, Cursor, any MCP client, or your own agent.",
-      "skills": ["spreadsheet-mcp", "excel-formula-debugging", "spreadsheet-agent-tools"]
+      "skills": ["spreadsheet-mcp", "excel-formula-debugging", "spreadsheet-agent-tools", "spreadsheet-ai-assistant"]
     },
     {
       "title": "Working with GRID",
