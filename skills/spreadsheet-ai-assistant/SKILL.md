@@ -125,6 +125,16 @@ back to the model as a tool error and the conversation continues. `captureRange`
 that returns image bytes; send it as an image block or leave it out of the list. The tools' own
 descriptions include examples for the model, so pass them through unchanged.
 
+The editor records the name of the sheet it shows when it mounts and does not update it when a
+tool renames or removes that sheet. It listens to the model's `recalc` event, and the engine emits
+that event synchronously from inside `removeSheet`, `renameSheet` and `editCells`, while the tool
+is still running. So when `manageSheets` removes or renames the shown sheet, the editor's listener
+asks the engine for cells of a sheet that no longer exists and throws
+`Invariant violation: cannot get cells for sheet '...'` before the tool returns; the tool reports
+that as its error although the engine has already applied the change. Before such a call, select
+a sheet that will still exist (`controller.current?.selectSheet(name)`) or unmount the grid, and
+remount or reselect afterwards; doing it after the call is too late.
+
 ## The turn loop
 
 The page owns the conversation. Each turn it sends the messages, the tool definitions and a fresh
