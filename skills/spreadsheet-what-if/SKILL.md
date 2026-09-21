@@ -59,7 +59,7 @@ go through the workbook and recalculate:
 ```js run
 import { ALL_FORMULA_CELLS } from "@grid-is/spreadsheet-engine";
 const wb = model.getWorkbook("model.xlsx");
-wb.editCell("Assumptions!B2", { f: "=B1*1.1" });
+wb.editCell("Assumptions!B2", { f: "B1*1.1" });
 model.recalculate(ALL_FORMULA_CELLS);
 ```
 

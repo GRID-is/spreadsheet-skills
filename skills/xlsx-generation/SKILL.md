@@ -32,10 +32,10 @@ model.writeMultiple([
 ]);
 
 // 2. Formulas, then recalculate
-wb.editCell("D2", { f: "=B2*C2" });
+wb.editCell("D2", { f: "B2*C2" });
 wb.fill("D2", "D2:D3");                       // fills the formula down, references adjusted
 wb.editCell("A5", { v: "Grand total" });
-wb.editCell("D5", { f: "=SUM(D2:D3)" });
+wb.editCell("D5", { f: "SUM(D2:D3)" });
 model.recalculate(ALL_FORMULA_CELLS);
 
 // 3. Verify before saving
@@ -78,7 +78,8 @@ body. `toXLSX(type, { compressionLevel: 0 })` trades size for speed on large fil
 | An Excel table with structured references | `wb.tables.add({ name: "Sales", ref: "Sheet1!A1:D3", columns: [{ name: "Item" }, { name: "Qty" }, { name: "Unit price" }, { name: "Total" }] })` then `=SUM(Sales[Total])` |
 | Dates | Write a serial number or a string Excel parses, and set a date `numberFormat` |
 | Booleans | Write `true` or `false`, not the strings `"TRUE"` or `"FALSE"` |
-| A formula that spills | `{ f: "=SORT(A2:A20)" }` works; read the result with `readCells` |
+| Formula text | `{ f: "SUM(D2:D3)" }` without a leading `=`. The engine stores `f` as given; a leading `=` is only stripped on export, and shows doubled in the editor until then |
+| A formula that spills | `{ f: "SORT(A2:A20)" }` works; read the result with `readCells` |
 | Fill a formula across many rows | `wb.fill("D2", "D2:D500")` (destination must contain the source) |
 | Row and column inserts while building | `wb.insertRows(sheet, rowIndex, count, below)`, 0-based |
 

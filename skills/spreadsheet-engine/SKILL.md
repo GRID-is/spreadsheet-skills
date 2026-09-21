@@ -24,10 +24,12 @@ and are the source of truth. If a method is not in there, it does not exist.
 1. **Await `Model.preconditions` once** before anything else. The formula parser loads
    asynchronously and most `Model` entry points throw until it has resolved.
 2. **Value writes recalculate, formula writes do not.** `model.write("B2", 42)` updates dependents.
-   `workbook.editCell("B5", { f: "=SUM(B1:B4)" })` leaves B5 empty until you call
+   `workbook.editCell("B5", { f: "SUM(B1:B4)" })` leaves B5 empty until you call
    `model.recalculate(ALL_FORMULA_CELLS)`.
-3. **Read expressions start with `=`, write references do not.** `model.readValue("=B2")` but
-   `model.write("B2", 42)`. Read methods accept any formula, not only references.
+3. **Read expressions start with `=`, writes do not.** `model.readValue("=B2")` but
+   `model.write("B2", 42)`, and `editCell` takes the formula text without it, as in `{ f: "SUM(B1:B4)" }`.
+   The engine stores `f` exactly as given, so a leading `=` shows up doubled in the editor's formula
+   bar until an .xlsx round trip strips it. Read methods accept any formula, not only references.
 4. **Writes are permanent.** There is no `reset()` or `writes()` in v17. To try something and revert,
    capture `ValueSnapshot.capture(model)` first and call `snapshot.applyTo(model)` after.
 5. **`fromXLSXFile` and `toXLSXFile` are Node only.** In the browser use `Model.fromXLSX(arrayBuffer,
@@ -55,7 +57,7 @@ model.readValue("=Summary!B10");          // computed value of a cell
 model.write("Assumptions!B2", 0.05);      // dependents recalculate automatically
 
 const wb = model.getWorkbook("budget.xlsx");
-wb.editCell("Summary!B11", { f: "=B10*1.1" });
+wb.editCell("Summary!B11", { f: "B10*1.1" });
 model.recalculate(ALL_FORMULA_CELLS);     // required after a formula edit
 
 await wb.toXLSXFile("budget-updated.xlsx");
@@ -150,7 +152,7 @@ rows.forEach((row, r) =>
 model.writeMultiple(writes);
 
 wb.editCell("E1", { v: "Total" });
-wb.editCell("E2", { f: "=C2*D2" });
+wb.editCell("E2", { f: "C2*D2" });
 wb.fill("E2", `E2:E${rows.length}`);        // copies the formula down with adjusted references
 model.recalculate(ALL_FORMULA_CELLS);
 ```
