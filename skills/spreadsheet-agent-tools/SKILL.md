@@ -118,12 +118,49 @@ z.toJSONSchema(editCells.parameters);
 Each tool here is `{ name, description, parameters, execute }`, where `parameters` is a full zod
 schema (not a raw shape) and `execute(ctx, args)` is synchronous for most tools. `spreadsheetTools`
 is the array of the 20 core tools; `captureRange` and `generateWorkbookContext` are separate
-exports, and the file lifecycle tools only exist in the stateful entry point. Import `Model` from
-`@grid-is/apiary` so it is the same engine
-instance the tools were built against. Save with `model.getWorkbook(name).toXLSX("arraybuffer")`.
+exports, and the file lifecycle tools only exist in the stateful entry point. Save with
+`model.getWorkbook(name).toXLSX("arraybuffer")`.
 
 This is the path for browser apps (the user's file never leaves the tab), for serverless functions
 that get the file as bytes, and for products that already hold a `Model` for a viewer or editor.
+The `spreadsheet-ai-assistant` skill is the full recipe for the last case: a chat panel and an
+editable grid on one model.
+
+## One engine copy
+
+The tools import the engine as `@grid-is/apiary`. `@grid-is/spreadsheet-editor` and
+`@grid-is/spreadsheet-viewer` import it as `@grid-is/spreadsheet-engine`. npm installs the two
+names as two separate copies even when they resolve to the same version, and the engine rejects
+objects that come from the other copy. Run the tools on a `Model` built from the other name and
+`editCells` reports success with an empty `changedCells` and nothing recalculates, other tools
+return `{ "error": "Invariant violation" }`, and the evaluation banner prints twice.
+
+In plain Node, where nothing else imports the engine, import `Model` from `@grid-is/apiary` as the
+example above does. In an app that shares the model with the editor or the viewer, alias one name
+to the other in the bundler so there is one engine, then import `Model` from
+`@grid-is/spreadsheet-engine` everywhere, as the other skills do:
+
+```js
+// vite.config.js
+export default {
+  resolve: { alias: { "@grid-is/apiary": "@grid-is/spreadsheet-engine" } },
+};
+```
+
+```js
+// next.config.js
+export default {
+  webpack(config) {
+    config.resolve.alias["@grid-is/apiary"] = "@grid-is/spreadsheet-engine";
+    return config;
+  },
+  turbopack: { resolveAlias: { "@grid-is/apiary": "@grid-is/spreadsheet-engine" } },
+};
+```
+
+npm `overrides` cannot do this; an override keeps the two directory names. With a commercial
+licence, alias in the other direction so the editor and viewer run on the licensed
+`@grid-is/apiary` build too.
 
 ## Running on a licensed engine
 
