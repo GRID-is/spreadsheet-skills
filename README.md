@@ -21,15 +21,15 @@ cd spreadsheet-skills
 
 # Claude Code
 mkdir -p ~/.claude/skills
-cp -R spreadsheet-skills/grid-development ~/.claude/skills/
+cp -R skills/grid-development ~/.claude/skills/
 
 # Codex
 mkdir -p ~/.codex/skills
-cp -R spreadsheet-skills/grid-development ~/.codex/skills/
+cp -R skills/grid-development ~/.codex/skills/
 
 # Cursor
 mkdir -p ~/.cursor/skills
-cp -R spreadsheet-skills/grid-development ~/.cursor/skills/
+cp -R skills/grid-development ~/.cursor/skills/
 ```
 
 Agent Tools plugin
