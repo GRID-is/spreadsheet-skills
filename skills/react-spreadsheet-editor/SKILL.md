@@ -155,24 +155,54 @@ model.write("Assumptions!B2", 0.05);
 model.readValue("=Summary!D10");
 ```
 
+Engine writes repaint the grid but do not fire `onChange`; the edit events come from the editor's
+own operations. So `onChange` is a clean "the user did this" signal, which is what makes it usable
+for telling an agent what changed (see the `spreadsheet-ai-assistant` skill). Note that
+`model.write` with a string that starts with `=` stores text, not a formula; formulas go through
+`workbook.editCell(ref, { f })` without the `=`, followed by `model.recalculate(ALL_FORMULA_CELLS)`.
+
 ## Fonts
 
-The editor ships definitions for around 20 spreadsheet fonts (Arial, Calibri, Aptos, Times New
-Roman and others), each tagged `"open"` or `"restricted"` by licence. `fontConfig` controls what
-loads and from where:
+The editor draws cells on a canvas, so the workbook's fonts have to be available as web fonts. The
+package ships definitions for around 20 spreadsheet fonts, each tagged `"open"` or `"restricted"`
+by licence, but no font files. By default it requests them as woff2 from the app's own origin under
+`/fonts/open/` and `/fonts/restricted/`. A missing file is not an error. The editor falls back to a
+system font and reports nothing, so a fresh project renders with fallback fonts until the files are
+in place.
 
-```tsx
-<SpreadsheetEditor
-  model={model}
-  fontConfig={{
-    fontFilter: "open",                       // or "restricted", or an array of font ids
-    baseUrl: "https://fonts.example.com/",    // self-host; can be { open, restricted } URLs
-  }}
-/>
+The loader expects four files per font, named after the font id:
+
+```
+public/fonts/open/carlito/carlito-regular.woff2
+public/fonts/open/carlito/carlito-bold.woff2
+public/fonts/open/carlito/carlito-italic.woff2
+public/fonts/open/carlito/carlito-bolditalic.woff2
 ```
 
-The `FontConfig`, `FontFilter` and `BaseURL` types are exported; the font list itself is in the
-package's type definitions.
+The open set is five OFL-licensed fonts, ids `caladea`, `carlito`, `lora`, `merriweather` and
+`poppins`. Carlito and Caladea are metric-compatible with Calibri and Cambria, Excel's defaults, so
+a workbook saved from Excel keeps its layout with the open set alone. All five are on Google Fonts
+and as Fontsource packages on npm, which is the quickest way to get the files:
+
+```sh
+npm install @fontsource/caladea @fontsource/carlito @fontsource/lora @fontsource/merriweather @fontsource/poppins
+```
+
+Each package has `files/<id>-latin-400-normal.woff2`, `-latin-700-normal`, `-latin-400-italic` and
+`-latin-700-italic`. Copy them into the layout above as `-regular`, `-bold`, `-italic` and
+`-bolditalic`, then restrict loading to that set:
+
+```tsx
+<SpreadsheetEditor model={model} fontConfig={{ fontFilter: "open" }} />
+```
+
+`fontFilter` takes `"open"`, `"restricted"` or an array of font ids. `baseUrl` points somewhere
+other than the app's origin, as one URL or as `{ open, restricted }`. The restricted set (Calibri,
+Arial, Aptos, Cambria, Georgia, Times New Roman, Verdana and others) is Microsoft fonts that no
+public package can ship. If the developer has licensed copies, they go under `fonts/restricted/<id>/`
+in the same layout. The editor always tries Calibri first and skips it silently when the file is
+absent. The `FontConfig` type is exported, and the full id list is `fontDefinitions` in the
+package's `dist/index.d.ts`.
 
 ## Server-rendered apps
 
