@@ -1,6 +1,6 @@
 ---
 name: spreadsheet-agent-tools
-description: Give your own AI agent product spreadsheet abilities with @grid-is/agent-tools. Wire GRID's 28 spreadsheet tools (load, inspect, read calculated values, edit, fill, format, run formulas, what-if, goal seek, precedents, dependents, save) into the Claude API, the Anthropic Agent SDK, the OpenAI Agents SDK, LangChain, Vercel AI SDK or any tool-calling framework, or embed the tools in a browser bundle against an in-memory model. Use for "add spreadsheet tools to my agent", "let my chatbot read and edit Excel files", "createGridTools", "run the GRID MCP server inside my app", "agent that builds financial models", or "spreadsheet tool calling".
+description: Give your own AI agent product spreadsheet abilities with @grid-is/agent-tools. Wire GRID's spreadsheet tools (load, inspect, read calculated values, edit, fill, format, run formulas, what-if, goal seek, precedents, dependents, save) into the Claude API, the Anthropic Agent SDK, the OpenAI Agents SDK, LangChain, Vercel AI SDK or any tool-calling framework, or embed the tools in a browser bundle against an in-memory model. Use for "add spreadsheet tools to my agent", "let my chatbot read and edit Excel files", "createGridTools", "run the GRID MCP server inside my app", "agent that builds financial models", or "spreadsheet tool calling".
 compatibility: Node 20+, ESM. The tools-only entry point also runs in the browser.
 ---
 
@@ -117,7 +117,7 @@ z.toJSONSchema(editCells.parameters);
 
 Each tool here is `{ name, description, parameters, execute }`, where `parameters` is a full zod
 schema (not a raw shape) and `execute(ctx, args)` is synchronous for most tools. `spreadsheetTools`
-is the array of the 20 core tools; `captureRange` and `generateWorkbookContext` are separate
+is the array of the core tools; `captureRange` and `generateWorkbookContext` are separate
 exports, and the file lifecycle tools only exist in the stateful entry point. Save with
 `model.getWorkbook(name).toXLSX("arraybuffer")`.
 

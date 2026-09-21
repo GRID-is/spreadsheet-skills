@@ -2,7 +2,7 @@
 
 Claude Code and Codex plugin for [GRID's Agent Tools](https://docs.grid.is/agent-tools). Runs the
 published [`@grid-is/agent-tools`](https://www.npmjs.com/package/@grid-is/agent-tools) MCP server
-via `npx`, with no build step and no bundled dependencies, and ships two skills:
+via `npx`, with no build step and no bundled dependencies, and ships these skills:
 
 - `spreadsheet-mcp`: setup, the full tool catalogue, and the conventions for references, values
   and formulas.
@@ -30,11 +30,11 @@ codex plugin add agent-tools@grid
 
 ## What you get
 
-- The `grid` MCP server with 28 tools: `loadWorkbook`, `describeStructure`, `viewRange`,
+- The `grid` MCP server: `loadWorkbook`, `describeStructure`, `viewRange`,
   `editCells`, `fillCells`, `runFormula`, `goalSeek`, `whatIf`, `precedents`, `dependents`,
   `listErrors`, `saveWorkbook` and more. See the
   [tool reference](https://docs.grid.is/agent-tools/tools/).
-- The two skills above, loaded automatically when a task involves .xlsx files, formulas or
+- The skills above, loaded automatically when a task involves .xlsx files, formulas or
   financial models.
 
 ## Updating

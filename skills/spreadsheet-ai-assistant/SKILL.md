@@ -8,12 +8,12 @@ compatibility: React 18 or later, ESM, browser rendering. A tool-calling LLM API
 
 A chat panel on one side, an editable spreadsheet on the other, and one `Model` underneath both.
 The user types in cells, the agent calls tools that read and edit the same cells, and each sees the
-other's changes at once. Three GRID packages do it:
+other's changes at once. It takes these GRID packages:
 
 - `@grid-is/spreadsheet-engine` holds the workbook in memory and recalculates it.
 - `@grid-is/spreadsheet-editor` renders that model as an editable grid and reports the user's edits.
-- `@grid-is/agent-tools/tools` gives the LLM twenty spreadsheet tools that run in the page against
-  that model. No server holds the file.
+- `@grid-is/agent-tools/tools` gives the LLM spreadsheet tools that run in the page against that
+  model. No server holds the file.
 
 ```sh
 npm install @grid-is/spreadsheet-engine @grid-is/spreadsheet-editor @grid-is/agent-tools zod
@@ -104,7 +104,7 @@ export default function App() {
 ```
 
 The editor needs woff2 font files under `public/fonts/open/<id>/` or it silently renders with
-system fonts. The `react-spreadsheet-editor` skill lists the five open fonts and where to get them.
+system fonts. The `react-spreadsheet-editor` skill lists the open fonts and where to get them.
 
 ## Tools in the browser
 
@@ -313,7 +313,7 @@ const toolDefinitions = spreadsheetTools.map((t) => ({
   description: t.description,
   input_schema: z.toJSONSchema(t.parameters),
 }));
-console.log(toolDefinitions.length, "tools");                       // 20
+console.log(toolDefinitions.length, "tools");
 
 const system = generateWorkbookContext(model);                        // fresh each turn
 console.log(system.split("\n")[0]);

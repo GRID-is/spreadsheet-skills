@@ -23,7 +23,7 @@ npx skills add GRID-is/spreadsheet-skills
 ```
 
 Every skill lists the others, so an agent with one installed knows the rest exist. Installing
-everything (`--all`) works but puts fourteen skills in the agent's context; most projects need one
+everything (`--all`) works but puts every skill in the agent's context; most projects need one
 or two.
 
 ### Upgrading from an earlier install

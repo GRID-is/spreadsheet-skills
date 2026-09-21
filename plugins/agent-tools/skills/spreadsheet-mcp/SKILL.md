@@ -7,7 +7,7 @@ compatibility: Any MCP client. The server runs on Node 20+ via npx. Claude Code 
 # Spreadsheets over MCP (@grid-is/agent-tools)
 
 `@grid-is/agent-tools` runs GRID's spreadsheet engine as an MCP server. It loads .xlsx files into
-memory, evaluates every formula with Excel semantics, and exposes 28 tools for understanding,
+memory, evaluates every formula with Excel semantics, and exposes tools for understanding,
 auditing, editing and modelling a workbook. Nothing touches disk until `saveWorkbook`.
 
 ## Setup

@@ -15,7 +15,7 @@ truth for saving.
 npm install @grid-is/spreadsheet-editor @grid-is/spreadsheet-engine
 ```
 
-Three peer dependencies: `react` and `react-dom` 18 or later, and `@grid-is/spreadsheet-engine`
+Peer dependencies: `react` and `react-dom` 18 or later, and `@grid-is/spreadsheet-engine`
 (v17). Unlike the engine and the viewer, the editor's bundle is not self-contained.
 
 ## Golden rules
@@ -85,7 +85,7 @@ Start from nothing with `Model.empty("untitled.xlsx")`. Open a dropped file with
 ## Events
 
 `onChange` receives a discriminated union. Every event has `type` and `timestamp` (ms since epoch).
-The two navigation events, `selection-change` (`selection`) and `sheet-change` (`sheetName`,
+The navigation events, `selection-change` (`selection`) and `sheet-change` (`sheetName`,
 `previousSheetName`), are the same as the viewer's. The edit events in v0.6:
 
 | `type` | Extra fields |
@@ -164,13 +164,13 @@ for telling an agent what changed (see the `spreadsheet-ai-assistant` skill). No
 ## Fonts
 
 The editor draws cells on a canvas, so the workbook's fonts have to be available as web fonts. The
-package ships definitions for around 20 spreadsheet fonts, each tagged `"open"` or `"restricted"`
+package ships definitions for a set of spreadsheet fonts, each tagged `"open"` or `"restricted"`
 by licence, but no font files. By default it requests them as woff2 from the app's own origin under
 `/fonts/open/` and `/fonts/restricted/`. A missing file is not an error. The editor falls back to a
 system font and reports nothing, so a fresh project renders with fallback fonts until the files are
 in place.
 
-The loader expects four files per font, named after the font id:
+The loader expects one file per style, named after the font id:
 
 ```
 public/fonts/open/carlito/carlito-regular.woff2
@@ -179,7 +179,7 @@ public/fonts/open/carlito/carlito-italic.woff2
 public/fonts/open/carlito/carlito-bolditalic.woff2
 ```
 
-The open set is five OFL-licensed fonts, ids `caladea`, `carlito`, `lora`, `merriweather` and
+The open set is OFL-licensed fonts, ids `caladea`, `carlito`, `lora`, `merriweather` and
 `poppins`. Carlito and Caladea are metric-compatible with Calibri and Cambria, Excel's defaults, so
 a workbook saved from Excel keeps its layout with the open set alone. All five are on Google Fonts
 and as Fontsource packages on npm, which is the quickest way to get the files:

@@ -2,7 +2,7 @@
 
 This repo publishes GRID's agent skills. Each folder under `skills/` is one skill: a hand-written
 `SKILL.md` plus generated files under `reference/`. `plugins/agent-tools/` is a Claude Code and
-Codex plugin whose `skills/` folder is a copy of two of the top-level skills.
+Codex plugin whose `skills/` folder holds copies of some of the top-level skills.
 
 ## Rules for editing a skill
 
