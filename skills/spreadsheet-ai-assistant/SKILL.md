@@ -139,6 +139,13 @@ back to the model as a tool error and the conversation continues. `captureRange`
 that returns image bytes; send it as an image block or leave it out of the list. The tools' own
 descriptions include examples for the model, so pass them through unchanged.
 
+The editor pins its active sheet by name when it mounts and does not follow a rename or removal
+made through the tools. If `manageSheets` removes or renames the sheet the grid is showing, the
+editor's next repaint throws `Invariant violation: cannot get cells for sheet '...'` from inside
+the tool call, and the tool reports an error although the engine has already applied the change.
+Before such a call, select a sheet that will still exist (`controller.current?.selectSheet(name)`)
+or unmount the grid, and remount or reselect afterwards; doing it after the call is too late.
+
 ## The turn loop
 
 The page owns the conversation. Each turn it sends the messages, the tool definitions and a fresh
