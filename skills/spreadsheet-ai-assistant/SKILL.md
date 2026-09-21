@@ -39,8 +39,9 @@ npm install @grid-is/spreadsheet-engine @grid-is/spreadsheet-editor @grid-is/age
 
 ## One engine copy
 
-npm installs `@grid-is/apiary` and `@grid-is/spreadsheet-engine` as two separate copies even at the
-same version, and the engine rejects objects from the other copy. Alias the tools' name to the
+agent-tools 0.3 imports the engine as `@grid-is/apiary`, the editor as `@grid-is/spreadsheet-engine`,
+and npm installs the two names as two separate copies even at the same version. The engine rejects
+objects from the other copy. Alias the tools' name to the
 editor's so the bundle has one engine, then import `Model` from `@grid-is/spreadsheet-engine`
 everywhere:
 
@@ -53,7 +54,8 @@ export default {
 
 For Next.js set the same alias in `webpack(config)` via `config.resolve.alias` and in
 `turbopack.resolveAlias`. The `spreadsheet-agent-tools` skill has the full block and the symptoms
-of getting this wrong. With a commercial licence, alias in the other direction.
+of getting this wrong. With a commercial licence, alias in the other direction. Once agent-tools
+declares `@grid-is/spreadsheet-engine` as a peer dependency instead, the alias can go.
 
 ## The page
 

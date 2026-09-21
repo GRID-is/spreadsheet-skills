@@ -128,8 +128,8 @@ editable grid on one model.
 
 ## One engine copy
 
-The tools import the engine as `@grid-is/apiary`. `@grid-is/spreadsheet-editor` and
-`@grid-is/spreadsheet-viewer` import it as `@grid-is/spreadsheet-engine`. npm installs the two
+In agent-tools 0.3 the tools import the engine as `@grid-is/apiary`. `@grid-is/spreadsheet-editor`
+and `@grid-is/spreadsheet-viewer` import it as `@grid-is/spreadsheet-engine`. npm installs the two
 names as two separate copies even when they resolve to the same version, and the engine rejects
 objects that come from the other copy. Run the tools on a `Model` built from the other name and
 `editCells` reports success with an empty `changedCells` and nothing recalculates, other tools
@@ -160,7 +160,8 @@ export default {
 
 npm `overrides` cannot do this; an override keeps the two directory names. With a commercial
 licence, alias in the other direction so the editor and viewer run on the licensed
-`@grid-is/apiary` build too.
+`@grid-is/apiary` build too. Once agent-tools declares `@grid-is/spreadsheet-engine` as a peer
+dependency instead, this section and the alias can go.
 
 ## Running on a licensed engine
 
