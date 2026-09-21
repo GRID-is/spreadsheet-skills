@@ -19,8 +19,8 @@ entry points:
 npm install @grid-is/agent-tools
 ```
 
-The engine installs as a dependency under the name `@grid-is/apiary`, resolved to the evaluation
-build `@grid-is/spreadsheet-engine`. No registry token is needed.
+The engine, `@grid-is/spreadsheet-engine`, is a peer dependency; npm 7 and later install it with
+the package. No registry token is needed.
 
 ## Tool shape
 
@@ -98,7 +98,7 @@ expose fewer tools, or add your own to the array.
 
 ```js standalone
 import { readFile } from "node:fs/promises";
-import { Model } from "@grid-is/apiary";
+import { Model } from "@grid-is/spreadsheet-engine";
 import { describeStructure, editCells, readCalculatedValues, spreadsheetTools } from "@grid-is/agent-tools/tools";
 import { z } from "zod";
 
@@ -128,47 +128,19 @@ editable grid on one model.
 
 ## One engine copy
 
-In agent-tools 0.3 the tools import the engine as `@grid-is/apiary`. `@grid-is/spreadsheet-editor`
-and `@grid-is/spreadsheet-viewer` import it as `@grid-is/spreadsheet-engine`. npm installs the two
-names as two separate copies even when they resolve to the same version, and the engine rejects
-objects that come from the other copy. Run the tools on a `Model` built from the other name and
-`editCells` reports success with an empty `changedCells` and nothing recalculates, other tools
-return `{ "error": "Invariant violation" }`, and the evaluation banner prints twice.
-
-In plain Node, where nothing else imports the engine, import `Model` from `@grid-is/apiary` as the
-example above does. In an app that shares the model with the editor or the viewer, alias one name
-to the other in the bundler so there is one engine, then import `Model` from
-`@grid-is/spreadsheet-engine` everywhere, as the other skills do:
-
-```js
-// vite.config.js
-export default {
-  resolve: { alias: { "@grid-is/apiary": "@grid-is/spreadsheet-engine" } },
-};
-```
-
-```js
-// next.config.js
-export default {
-  webpack(config) {
-    config.resolve.alias["@grid-is/apiary"] = "@grid-is/spreadsheet-engine";
-    return config;
-  },
-  turbopack: { resolveAlias: { "@grid-is/apiary": "@grid-is/spreadsheet-engine" } },
-};
-```
-
-npm `overrides` cannot do this; an override keeps the two directory names. With a commercial
-licence, alias in the other direction so the editor and viewer run on the licensed
-`@grid-is/apiary` build too. Once agent-tools declares `@grid-is/spreadsheet-engine` as a peer
-dependency instead, this section and the alias can go.
+The tools, `@grid-is/spreadsheet-editor` and `@grid-is/spreadsheet-viewer` all depend on the same
+package, `@grid-is/spreadsheet-engine`, so one install gives one engine and a `Model` from the
+editor works in the tools as it is. No bundler alias is needed. If `npm ls @grid-is/spreadsheet-engine`
+ever shows two copies, the version ranges the packages declare do not overlap; align them rather
+than aliasing.
 
 ## Running on a licensed engine
 
-With a commercial licence, run the tools on the full engine by overriding the dependency:
+With a commercial licence, point the engine's package name at the licensed build with an npm
+override; the tools, the editor and the viewer then all run on it:
 
 ```json
-"overrides": { "@grid-is/apiary": "17.0.0" }
+"overrides": { "@grid-is/spreadsheet-engine": "npm:@grid-is/apiary@^17.0.0" }
 ```
 
 (Set the version your licence covers.) Nothing in the tools changes.

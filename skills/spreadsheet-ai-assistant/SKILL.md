@@ -21,9 +21,9 @@ npm install @grid-is/spreadsheet-engine @grid-is/spreadsheet-editor @grid-is/age
 
 ## Golden rules
 
-1. **One model, one engine copy.** The tools import the engine as `@grid-is/apiary`, the editor as
-   `@grid-is/spreadsheet-engine`. Alias one to the other in the bundler (below) or the tools reject
-   the editor's model.
+1. **One model, one engine copy.** The tools and the editor both depend on
+   `@grid-is/spreadsheet-engine`, so the editor's `Model` goes to the tools as it is. If
+   `npm ls @grid-is/spreadsheet-engine` shows two copies, align version ranges; never alias.
 2. **Tools run in the browser, the API key does not.** The chat loop runs in the page and calls the
    LLM through a small proxy on your backend. Tool calls come back to the page and execute there.
 3. **Tool edits repaint the grid but do not fire `onChange`.** Edit events come only from the user's
@@ -39,23 +39,9 @@ npm install @grid-is/spreadsheet-engine @grid-is/spreadsheet-editor @grid-is/age
 
 ## One engine copy
 
-agent-tools 0.3 imports the engine as `@grid-is/apiary`, the editor as `@grid-is/spreadsheet-engine`,
-and npm installs the two names as two separate copies even at the same version. The engine rejects
-objects from the other copy. Alias the tools' name to the
-editor's so the bundle has one engine, then import `Model` from `@grid-is/spreadsheet-engine`
-everywhere:
-
-```js
-// vite.config.js
-export default {
-  resolve: { alias: { "@grid-is/apiary": "@grid-is/spreadsheet-engine" } },
-};
-```
-
-For Next.js set the same alias in `webpack(config)` via `config.resolve.alias` and in
-`turbopack.resolveAlias`. The `spreadsheet-agent-tools` skill has the full block and the symptoms
-of getting this wrong. With a commercial licence, alias in the other direction. Once agent-tools
-declares `@grid-is/spreadsheet-engine` as a peer dependency instead, the alias can go.
+The tools, the editor and the viewer all depend on `@grid-is/spreadsheet-engine`, so one install
+gives one engine. Import `Model` from `@grid-is/spreadsheet-engine` everywhere. Two copies in
+`npm ls @grid-is/spreadsheet-engine` mean the packages' version ranges do not overlap; align them.
 
 ## The page
 
@@ -301,7 +287,7 @@ would, reads the result, and renders the user-edit summary from a recorded event
 
 ```js standalone
 import { z } from "zod";
-import { Model } from "@grid-is/apiary";      // Node has no bundler alias; in the app this is @grid-is/spreadsheet-engine
+import { Model } from "@grid-is/spreadsheet-engine";
 import { editCells, generateWorkbookContext, isToolError, readCalculatedValues, spreadsheetTools } from "@grid-is/agent-tools/tools";
 
 await Model.preconditions;
