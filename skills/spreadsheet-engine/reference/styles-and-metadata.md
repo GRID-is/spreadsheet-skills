@@ -2,7 +2,7 @@
 
 # Styles, number formats, comments, notes, tables, themes
 
-Generated from `@grid-is/spreadsheet-engine@17.1.0` (`dist/index.d.ts`). Every public symbol listed here exists in that version. If the installed version differs, read `node_modules/@grid-is/spreadsheet-engine/dist/index.d.ts` instead; it is the source of truth.
+Generated from `@grid-is/spreadsheet-engine@17.1.1` (`dist/index.d.ts`). Every public symbol listed here exists in that version. If the installed version differs, read `node_modules/@grid-is/spreadsheet-engine/dist/index.d.ts` instead; it is the source of truth.
 
 Cell formatting is read through `cell.style` and written with `Workbook.editCell` (the `s` field) or the managers below. Threaded comments, legacy notes, Excel tables and the workbook theme each have a manager on the workbook.
 

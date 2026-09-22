@@ -131,7 +131,7 @@ instead of an MCP client, see the `spreadsheet-agent-tools` skill.
 <!-- generated:versions -->
 Written and verified against:
 
-- `@grid-is/agent-tools@0.3.0`
+- `@grid-is/agent-tools@0.3.3`
 <!-- /generated:versions -->
 
 `npx` fetches the latest server, so the tool list may be newer than this skill. The server's own

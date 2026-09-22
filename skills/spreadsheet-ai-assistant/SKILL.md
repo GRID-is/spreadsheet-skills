@@ -21,9 +21,9 @@ npm install @grid-is/spreadsheet-engine @grid-is/spreadsheet-editor @grid-is/age
 
 ## Golden rules
 
-1. **One model, one engine copy.** The tools import the engine as `@grid-is/apiary`, the editor as
-   `@grid-is/spreadsheet-engine`. Alias one to the other in the bundler (below) or the tools reject
-   the editor's model.
+1. **One model, one engine copy.** The tools and the editor both depend on
+   `@grid-is/spreadsheet-engine`, so the editor's `Model` goes to the tools as it is. If
+   `npm ls @grid-is/spreadsheet-engine` shows two copies, align version ranges; never alias.
 2. **Tools run in the browser, the API key does not.** The chat loop runs in the page and calls the
    LLM through a small proxy on your backend. Tool calls come back to the page and execute there.
 3. **Tool edits repaint the grid but do not fire `onChange`.** Edit events come only from the user's
@@ -39,23 +39,9 @@ npm install @grid-is/spreadsheet-engine @grid-is/spreadsheet-editor @grid-is/age
 
 ## One engine copy
 
-agent-tools 0.3 imports the engine as `@grid-is/apiary`, the editor as `@grid-is/spreadsheet-engine`,
-and npm installs the two names as two separate copies even at the same version. The engine rejects
-objects from the other copy. Alias the tools' name to the
-editor's so the bundle has one engine, then import `Model` from `@grid-is/spreadsheet-engine`
-everywhere:
-
-```js
-// vite.config.js
-export default {
-  resolve: { alias: { "@grid-is/apiary": "@grid-is/spreadsheet-engine" } },
-};
-```
-
-For Next.js set the same alias in `webpack(config)` via `config.resolve.alias` and in
-`turbopack.resolveAlias`. The `spreadsheet-agent-tools` skill has the full block and the symptoms
-of getting this wrong. With a commercial licence, alias in the other direction. Once agent-tools
-declares `@grid-is/spreadsheet-engine` as a peer dependency instead, the alias can go.
+The tools, the editor and the viewer all depend on `@grid-is/spreadsheet-engine`, so one install
+gives one engine. Import `Model` from `@grid-is/spreadsheet-engine` everywhere. Two copies in
+`npm ls @grid-is/spreadsheet-engine` mean the packages' version ranges do not overlap; align them.
 
 ## The page
 
@@ -138,6 +124,16 @@ export async function runTool(model: Model, name: string, input: unknown) {
 back to the model as a tool error and the conversation continues. `captureRange` is the exception
 that returns image bytes; send it as an image block or leave it out of the list. The tools' own
 descriptions include examples for the model, so pass them through unchanged.
+
+The editor records the name of the sheet it shows when it mounts and does not update it when a
+tool renames or removes that sheet. It listens to the model's `recalc` event, and the engine emits
+that event synchronously from inside `removeSheet`, `renameSheet` and `editCells`, while the tool
+is still running. So when `manageSheets` removes or renames the shown sheet, the editor's listener
+asks the engine for cells of a sheet that no longer exists and throws
+`Invariant violation: cannot get cells for sheet '...'` before the tool returns; the tool reports
+that as its error although the engine has already applied the change. Before such a call, select
+a sheet that will still exist (`controller.current?.selectSheet(name)`) or unmount the grid, and
+remount or reselect afterwards; doing it after the call is too late.
 
 ## The turn loop
 
@@ -301,7 +297,7 @@ would, reads the result, and renders the user-edit summary from a recorded event
 
 ```js standalone
 import { z } from "zod";
-import { Model } from "@grid-is/apiary";      // Node has no bundler alias; in the app this is @grid-is/spreadsheet-engine
+import { Model } from "@grid-is/spreadsheet-engine";
 import { editCells, generateWorkbookContext, isToolError, readCalculatedValues, spreadsheetTools } from "@grid-is/agent-tools/tools";
 
 await Model.preconditions;
@@ -352,8 +348,8 @@ server are `spreadsheet-agent-tools`. Docs: <https://docs.grid.is/agent-tools/> 
 Written and verified against:
 
 - `@grid-is/spreadsheet-editor@0.6.0`
-- `@grid-is/spreadsheet-engine@17.1.0`
-- `@grid-is/agent-tools@0.3.0`
+- `@grid-is/spreadsheet-engine@17.1.1`
+- `@grid-is/agent-tools@0.3.3`
 <!-- /generated:versions -->
 
 If an installed package is newer than the versions above, read its `dist/index.d.ts` (the tools

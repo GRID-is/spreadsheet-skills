@@ -2,7 +2,7 @@
 
 # Errors: formula error values and thrown errors
 
-Generated from `@grid-is/spreadsheet-engine@17.1.0` (`dist/index.d.ts`). Every public symbol listed here exists in that version. If the installed version differs, read `node_modules/@grid-is/spreadsheet-engine/dist/index.d.ts` instead; it is the source of truth.
+Generated from `@grid-is/spreadsheet-engine@17.1.1` (`dist/index.d.ts`). Every public symbol listed here exists in that version. If the installed version differs, read `node_modules/@grid-is/spreadsheet-engine/dist/index.d.ts` instead; it is the source of truth.
 
 `FormulaError` values flow through cell values and `runFormula` results; they are not thrown. The `Error` subclasses are thrown by edits the engine refuses.
 
