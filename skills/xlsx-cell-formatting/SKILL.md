@@ -1,6 +1,6 @@
 ---
 name: xlsx-cell-formatting
-description: Format cells in Excel .xlsx workbooks from JavaScript or TypeScript with @grid-is/spreadsheet-engine. Bold headers, fonts, colours, fills, borders, alignment, number formats (currency, percent, dates), merged cells, column widths and row heights, named styles, threaded comments, notes, and Excel tables. Use for "bold the header row in a generated xlsx", "apply a currency format", "set column widths", "merge title cells", "add a comment to a cell", "read a cell's style", or "why does my colour come out black". Also covers displaying values as Excel formats them outside the grid with numfmt.
+description: Format and style cells in Excel .xlsx workbooks from JavaScript or TypeScript with @grid-is/spreadsheet-engine. Bold headers, fonts, colours, fills, borders, alignment, number formats (currency, percent, dates), merged cells, column widths and row heights, named styles, threaded comments, notes, and Excel tables. Load this for any formatting change to a workbook the engine creates or edits, however small, because the engine's style object differs from ExcelJS and SheetJS. Use for "make the header row bold", "format a column as currency", "number format", "set column widths", "merge the title cells", "add a comment to a cell", "style the generated xlsx", "read a cell's style", or "why does my colour come out black". Also covers displaying values as Excel formats them outside the grid with numfmt.
 compatibility: JavaScript and TypeScript, ESM only. Node 20+, Deno, Bun, or the browser.
 ---
 
