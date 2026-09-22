@@ -91,7 +91,6 @@ surrounding text:
 **Working with GRID**
 
 - `grid-licensing`: Evaluation versus commercial licence, telemetry, attribution, and how to request a commercial licence.
-- `grid-branding`: Official GRID logos and the Powered by GRID lockup, and how to use them.
 
 Install any of them with `npx skills add GRID-is/spreadsheet-skills --skill <name>`. Full list: <https://github.com/GRID-is/spreadsheet-skills>.
 <!-- /generated:catalogue -->

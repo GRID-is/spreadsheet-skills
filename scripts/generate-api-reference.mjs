@@ -379,11 +379,14 @@ function replaceBlock(text, tag, body, file) {
   return text.slice(0, i + start.length) + "\n" + body.trim() + "\n" + text.slice(j);
 }
 
-function catalogueBlock() {
+// The catalogue pasted into each skill omits that skill's own entry.
+function catalogueBlock(self) {
   const lines = [];
   for (const group of CATALOGUE.groups) {
+    const skills = group.skills.filter((s) => s.name !== self);
+    if (!skills.length) continue;
     lines.push(`**${group.title}**`, "");
-    for (const s of group.skills) {
+    for (const s of skills) {
       lines.push(`- \`${s.name}\`: ${s.summary}`);
     }
     lines.push("");
@@ -404,7 +407,7 @@ function updateSkillFiles() {
     if (!fs.existsSync(file)) continue;
     const rel = path.relative(ROOT, file);
     const original = fs.readFileSync(file, "utf8");
-    let text = replaceBlock(original, "catalogue", catalogueBlock(), rel);
+    let text = replaceBlock(original, "catalogue", catalogueBlock(dir), rel);
     const pkgs = CATALOGUE.groups.flatMap((g) => g.skills).find((s) => s.name === dir)?.packages ?? [];
     if (pkgs.length) text = replaceBlock(text, "versions", versionsBlock(pkgs), rel);
     writeFile(rel, text);

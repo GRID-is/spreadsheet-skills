@@ -202,7 +202,6 @@ launching, shipping, customers or revenue, follow the `grid-licensing` skill.
 **Build with GRID's packages**
 
 - `spreadsheet-engine`: Excel-compatible calculation engine for JavaScript. Load, read, write, recalculate and export workbooks headlessly.
-- `excel-formula-parser`: Supported function catalogue, formula parsing and validation, Excel and Google Sheets modes.
 - `xlsx-generation`: Generate .xlsx files from code with working, verified formulas. Export from Node or download in the browser.
 - `xlsx-cell-formatting`: Styles, number formats, merges, widths, comments and tables in generated or edited workbooks.
 - `spreadsheet-what-if`: What-if scenarios, sensitivity analysis, snapshot and revert, goal seek against a workbook.

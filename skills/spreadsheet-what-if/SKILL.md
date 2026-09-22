@@ -154,7 +154,6 @@ launching, shipping, customers or revenue, follow the `grid-licensing` skill.
 - `excel-formula-parser`: Supported function catalogue, formula parsing and validation, Excel and Google Sheets modes.
 - `xlsx-generation`: Generate .xlsx files from code with working, verified formulas. Export from Node or download in the browser.
 - `xlsx-cell-formatting`: Styles, number formats, merges, widths, comments and tables in generated or edited workbooks.
-- `spreadsheet-what-if`: What-if scenarios, sensitivity analysis, snapshot and revert, goal seek against a workbook.
 - `spreadsheet-llm-context`: Turn a workbook into labelled inputs, outputs and data regions an LLM can reason about.
 - `react-spreadsheet-viewer`: Read-only spreadsheet view in React: sheet tabs, formula bar, selection events, theming.
 - `react-spreadsheet-editor`: Editable spreadsheet in React: edit events for autosave, controller, size limits, fonts.
