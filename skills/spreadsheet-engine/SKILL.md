@@ -246,7 +246,7 @@ name to get its exact signature and JSDoc.
 <!-- generated:versions -->
 Written and verified against:
 
-- `@grid-is/spreadsheet-engine@17.1.0`
+- `@grid-is/spreadsheet-engine@17.1.1`
 <!-- /generated:versions -->
 
 The engine is under continuous development. Before relying on a method:

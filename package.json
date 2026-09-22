@@ -14,10 +14,10 @@
     "test:examples": "node scripts/run-examples.mjs"
   },
   "devDependencies": {
-    "@grid-is/agent-tools": "^0.3.0",
+    "@grid-is/agent-tools": "^0.3.3",
     "@grid-is/spreadsheet-editor": "^0.6.0",
-    "@grid-is/spreadsheet-engine": "^17.1.0",
-    "@grid-is/spreadsheet-viewer": "^3.0.5",
+    "@grid-is/spreadsheet-engine": "^17.1.1",
+    "@grid-is/spreadsheet-viewer": "^3.1.1",
     "numfmt": "^3.2.6",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

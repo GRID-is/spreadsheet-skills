@@ -2,7 +2,7 @@
 
 # Model: loading, reading, writing, recalculation
 
-Generated from `@grid-is/spreadsheet-engine@17.1.0` (`dist/index.d.ts`). Every public symbol listed here exists in that version. If the installed version differs, read `node_modules/@grid-is/spreadsheet-engine/dist/index.d.ts` instead; it is the source of truth.
+Generated from `@grid-is/spreadsheet-engine@17.1.1` (`dist/index.d.ts`). Every public symbol listed here exists in that version. If the installed version differs, read `node_modules/@grid-is/spreadsheet-engine/dist/index.d.ts` instead; it is the source of truth.
 
 `Model` is the entry point. It holds one or more workbooks and the shared dependency graph. Value writes recalculate automatically; formula edits go through `Workbook.editCell` and need `model.recalculate(ALL_FORMULA_CELLS)`.
 

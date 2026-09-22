@@ -2,7 +2,7 @@
 
 # @grid-is/spreadsheet-viewer API
 
-Generated from `@grid-is/spreadsheet-viewer@3.0.5` (`dist/index.d.ts`). Every public symbol listed here exists in that version. If the installed version differs, read `node_modules/@grid-is/spreadsheet-viewer/dist/index.d.ts` instead; it is the source of truth.
+Generated from `@grid-is/spreadsheet-viewer@3.1.1` (`dist/index.d.ts`). Every public symbol listed here exists in that version. If the installed version differs, read `node_modules/@grid-is/spreadsheet-viewer/dist/index.d.ts` instead; it is the source of truth.
 
 ### function SpreadsheetViewer()
 
