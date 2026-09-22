@@ -2,7 +2,7 @@
 
 # @grid-is/agent-tools API (package root)
 
-Generated from `@grid-is/agent-tools@0.3.0` (`dist/index.d.ts`). Every public symbol listed here exists in that version. If the installed version differs, read `node_modules/@grid-is/agent-tools/dist/index.d.ts` instead; it is the source of truth.
+Generated from `@grid-is/agent-tools@0.3.3` (`dist/index.d.ts`). Every public symbol listed here exists in that version. If the installed version differs, read `node_modules/@grid-is/agent-tools/dist/index.d.ts` instead; it is the source of truth.
 
 The stateful, file-based tool set and the MCP server helpers. See tools.md for the tool catalogue.
 
@@ -143,10 +143,10 @@ const dependents: SpreadsheetTool<import("zod").ZodObject<{
 ### const describeStructure
 
 ```ts
-const describeStructure: SpreadsheetTool<z.ZodObject<{
-  sheets: z.ZodOptional<z.ZodArray<z.ZodString>>;
-  labelOffset: z.ZodOptional<z.ZodNumber>;
-}, z.core.$strip>, DescribeStructureResult | ToolError>
+const describeStructure: SpreadsheetTool<import("zod").ZodObject<{
+  sheets: import("zod").ZodOptional<import("zod").ZodArray<import("zod").ZodString>>;
+  labelOffset: import("zod").ZodOptional<import("zod").ZodNumber>;
+}, import("zod/v4/core").$strip>, DescribeStructureResult | ToolError>
 ```
 
 ### const editCellStyles
@@ -398,19 +398,20 @@ const fillCells: SpreadsheetTool<z.ZodObject<{
 ### const findCells
 
 ```ts
-const findCells: SpreadsheetTool<z.ZodObject<{
-  sheet: z.ZodOptional<z.ZodString>;
-  range: z.ZodOptional<z.ZodString>;
-  matchMode: z.ZodOptional<z.ZodEnum<{
+const findCells: SpreadsheetTool<import("zod").ZodObject<{
+  sheet: import("zod").ZodOptional<import("zod").ZodString>;
+  range: import("zod").ZodOptional<import("zod").ZodString>;
+  matchMode: import("zod").ZodOptional<import("zod").ZodEnum<{
     AND: "AND";
     OR: "OR";
   }>>;
-  hasFormula: z.ZodOptional<z.ZodBoolean>;
-  fillColor: z.ZodOptional<z.ZodString>;
-  formulaContains: z.ZodOptional<z.ZodString>;
-  valueContains: z.ZodOptional<z.ZodString>;
-  valueWithin: z.ZodOptional<z.ZodArray<z.ZodNumber>>;
-}, z.core.$strip>, ToolError | FindCellsResult>
+  hasFormula: import("zod").ZodOptional<import("zod").ZodBoolean>;
+  fillColor: import("zod").ZodOptional<import("zod").ZodString>;
+  fontColor: import("zod").ZodOptional<import("zod").ZodString>;
+  formulaContains: import("zod").ZodOptional<import("zod").ZodString>;
+  valueContains: import("zod").ZodOptional<import("zod").ZodString>;
+  valueWithin: import("zod").ZodOptional<import("zod").ZodArray<import("zod").ZodNumber>>;
+}, import("zod/v4/core").$strip>, ToolError | FindCellsResult>
 ```
 
 ### function generateWorkbookContext()
@@ -423,7 +424,7 @@ Generate a pre-analyzed workbook summary suitable for injection into
 an LLM system prompt. Combines the information from `symbols` and
 `describeStructure` into a concise, structured format.
 
-Returns `null` only if the underlying tools fail.
+Returns `null` only if the underlying analysis fails.
 
 ### const getComment
 
@@ -436,10 +437,10 @@ const getComment: SpreadsheetTool<z.ZodObject<{
 ### const getComments
 
 ```ts
-const getComments: SpreadsheetTool<z.ZodObject<{
-  sheet: z.ZodOptional<z.ZodString>;
-  offset: z.ZodOptional<z.ZodNumber>;
-}, z.core.$strip>, ToolError | GetCommentsResult>
+const getComments: SpreadsheetTool<import("zod").ZodObject<{
+  sheet: import("zod").ZodOptional<import("zod").ZodString>;
+  offset: import("zod").ZodOptional<import("zod").ZodNumber>;
+}, import("zod/v4/core").$strip>, ToolError | GetCommentsResult>
 ```
 
 ### const getStyles
@@ -485,18 +486,17 @@ function isToolError(value: unknown): value is ToolError
 ### const listErrors
 
 ```ts
-const listErrors: SpreadsheetTool<z.ZodObject<{
-  sheet: z.ZodOptional<z.ZodString>;
-  range: z.ZodOptional<z.ZodString>;
-  max: z.ZodOptional<z.ZodNumber>;
-}, z.core.$strip>, ToolError | ListErrorsResult>
+const listErrors: SpreadsheetTool<import("zod").ZodObject<{
+  sheet: import("zod").ZodOptional<import("zod").ZodString>;
+  range: import("zod").ZodOptional<import("zod").ZodString>;
+  max: import("zod").ZodOptional<import("zod").ZodNumber>;
+}, import("zod/v4/core").$strip>, ToolError | ListErrorsResult>
 ```
 
 ### const manageRowsAndColumns
 
 ```ts
 const manageRowsAndColumns: SpreadsheetTool<z.ZodObject<{
-  sheet: z.ZodString;
   columns: z.ZodOptional<z.ZodObject<{
     insert: z.ZodOptional<z.ZodObject<{
       column: z.ZodString;
@@ -519,6 +519,7 @@ const manageRowsAndColumns: SpreadsheetTool<z.ZodObject<{
     }, z.core.$strip>>;
     autoSize: z.ZodOptional<z.ZodArray<z.ZodNumber>>;
   }, z.core.$strip>>;
+  sheet: z.ZodString;
   note: z.ZodOptional<z.ZodString>;
 }, z.core.$strip>, ToolError | ManageRowsAndColumnsResult>
 ```

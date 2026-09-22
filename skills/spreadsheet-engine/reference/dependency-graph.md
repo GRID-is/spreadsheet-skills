@@ -2,7 +2,7 @@
 
 # Dependency graph vertices
 
-Generated from `@grid-is/spreadsheet-engine@17.1.0` (`dist/index.d.ts`). Every public symbol listed here exists in that version. If the installed version differs, read `node_modules/@grid-is/spreadsheet-engine/dist/index.d.ts` instead; it is the source of truth.
+Generated from `@grid-is/spreadsheet-engine@17.1.1` (`dist/index.d.ts`). Every public symbol listed here exists in that version. If the installed version differs, read `node_modules/@grid-is/spreadsheet-engine/dist/index.d.ts` instead; it is the source of truth.
 
 Identifiers for cells, names and ranges in the dependency graph, and the conversions between them and references.
 

@@ -2,7 +2,7 @@
 
 # @grid-is/agent-tools: tool catalogue
 
-Generated from `@grid-is/agent-tools@0.3.0` by calling `createGridTools()`. 28 tools. Every tool operates on the active workbook, the one most recently loaded, created or selected. Parameter types are the JSON Schema derived from each tool's zod schema.
+Generated from `@grid-is/agent-tools@0.3.3` by calling `createGridTools()`. 28 tools. Every tool operates on the active workbook, the one most recently loaded, created or selected. Parameter types are the JSON Schema derived from each tool's zod schema.
 
 ## Workbook lifecycle
 
@@ -55,6 +55,7 @@ This helps you understand:
 - Which rows are headers vs data
 - Column and row labels for each data region
 - Sheet names and their contents
+- Whether iterative calculation is on (needed for intentional circular references)
 
 Labels are limited to 50 per sheet. Use totalLabels to check if more exist, and labelOffset to paginate.
 
@@ -144,7 +145,8 @@ Search for cells matching specified criteria within a sheet or range. Returns up
 | `range` | `string` | no | Restrict search to an A1-style range, e.g. 'Sheet1!B2:D10' or 'B2:D10'. An unqualified range resolves against 'sheet' if given, otherwise the first sheet. Defined names are not accepted. Ranges larger than 10,000 cells are rejected. |
 | `matchMode` | `"AND" \| "OR"` | no | "AND" = all criteria must match (narrows results). "OR" = any criterion matches (broader sweep). Defaults to "AND". |
 | `hasFormula` | `boolean` | no | Match cells that have (true) or don't have (false) a formula. |
-| `fillColor` | `string` | no | Match cells whose fill color matches this search term. Accepts hex values ("FFFF00", "#FF0000"), partial hex ("FF"), named colors ("yellow", "light blue", "dark green"), and Excel preset names. Case-insensitive. |
+| `fillColor` | `string` | no | Match cells whose fill color matches this search term. Accepts hex values ("FFFF00", "#FF0000"), partial hex ("FF"), color family words ("yellow", "blue", "gray") which match by hue, specific color names ("light blue", "dark green") which match the nearest named color, and theme scheme names ("accent1"). Theme, indexed, and auto colors are resolved through the workbook theme. Case-insensitive. |
+| `fontColor` | `string` | no | Match cells whose font color matches this search term. Accepts hex values ("0000FF", "#FF0000"), partial hex, color family words ("blue", "red", "gray") which match by hue, specific color names ("steel blue") which match the nearest named color, and theme scheme names ("accent1"). Theme, indexed, and auto colors are resolved through the workbook theme. Case-insensitive. Useful for auditing color-coding conventions (e.g. blue font = hardcoded input). |
 | `formulaContains` | `string` | no | Match cells whose formula text contains this substring (case-insensitive). |
 | `valueContains` | `string` | no | Match cells whose value (converted to text) contains this substring (case-insensitive). |
 | `valueWithin` | `number[]` | no | Match cells whose numeric value falls within this inclusive range [min, max]. |
@@ -349,9 +351,9 @@ Operations are executed in order: column insert → column delete → row insert
 
 | Parameter | Type | Required | Description |
 |---|---|---|---|
-| `sheet` | `string` | yes | Sheet name to operate on |
 | `columns` | `{ insert?: { column: string, count: number }, delete?: { column: string, count: number }, autoSize?: string[] }` | no | Column operations |
 | `rows` | `{ insert?: { row: number, count: number }, delete?: { row: number, count: number }, autoSize?: number[] }` | no | Row operations |
+| `sheet` | `string` | yes | Sheet name to operate on |
 | `note` | `string` | no | Description of this operation for version history |
 
 ## Model

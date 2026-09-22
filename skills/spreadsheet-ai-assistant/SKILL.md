@@ -348,8 +348,8 @@ server are `spreadsheet-agent-tools`. Docs: <https://docs.grid.is/agent-tools/> 
 Written and verified against:
 
 - `@grid-is/spreadsheet-editor@0.6.0`
-- `@grid-is/spreadsheet-engine@17.1.0`
-- `@grid-is/agent-tools@0.3.0`
+- `@grid-is/spreadsheet-engine@17.1.1`
+- `@grid-is/agent-tools@0.3.3`
 <!-- /generated:versions -->
 
 If an installed package is newer than the versions above, read its `dist/index.d.ts` (the tools

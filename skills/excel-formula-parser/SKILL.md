@@ -182,7 +182,7 @@ For loading workbooks and everything else on `Model`, see the `spreadsheet-engin
 <!-- generated:versions -->
 Written and verified against:
 
-- `@grid-is/spreadsheet-engine@17.1.0`
+- `@grid-is/spreadsheet-engine@17.1.1`
 <!-- /generated:versions -->
 
 If the installed `@grid-is/spreadsheet-engine` is newer than the version above, grep

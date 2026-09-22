@@ -127,7 +127,7 @@ outputs that depend on it.
 <!-- generated:versions -->
 Written and verified against:
 
-- `@grid-is/agent-tools@0.3.0`
+- `@grid-is/agent-tools@0.3.3`
 <!-- /generated:versions -->
 
 `npx` fetches the latest server, so tool descriptions in your client are authoritative if they

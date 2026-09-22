@@ -176,7 +176,7 @@ Docs: <https://docs.grid.is/agent-tools/>.
 <!-- generated:versions -->
 Written and verified against:
 
-- `@grid-is/agent-tools@0.3.0`
+- `@grid-is/agent-tools@0.3.3`
 <!-- /generated:versions -->
 
 If the installed `@grid-is/agent-tools` is newer than the version above, read
