@@ -227,7 +227,7 @@ Docs: <https://docs.grid.is/spreadsheet-editor/>. Loading and saving go through 
 <!-- generated:versions -->
 Written and verified against:
 
-- `@grid-is/spreadsheet-editor@0.6.0`
+- `@grid-is/spreadsheet-editor@0.7.0`
 - `@grid-is/spreadsheet-engine@17.1.1`
 <!-- /generated:versions -->
 
