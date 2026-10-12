@@ -1,0 +1,26 @@
+version: 2
+
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 3
+      exclude:
+        - "@grid-is/*"
+    open-pull-requests-limit: 100
+    groups:
+      grid:
+        patterns:
+          - "@grid-is/*"
+      react:
+        patterns:
+          - "react"
+          - "react-dom"
+          - "@types/react"
+          - "@types/react-dom"
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
