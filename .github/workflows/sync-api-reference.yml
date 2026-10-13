@@ -90,7 +90,7 @@ jobs:
 
       - name: Open pull request
         id: pr
-        uses: peter-evans/create-pull-request@v7
+        uses: peter-evans/create-pull-request@v8
         with:
           branch: sync/api-reference
           title: "Sync API reference with latest GRID packages"
