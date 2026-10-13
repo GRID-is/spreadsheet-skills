@@ -18,7 +18,7 @@ jobs:
   check:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           # Empty on a pull_request or push run, where checkout's own default
           # (the triggering commit) is the right thing.
