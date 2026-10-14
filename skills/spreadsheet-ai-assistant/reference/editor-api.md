@@ -2,7 +2,7 @@
 
 # @grid-is/spreadsheet-editor API
 
-Generated from `@grid-is/spreadsheet-editor@0.6.0` (`dist/index.d.ts`). Every public symbol listed here exists in that version. If the installed version differs, read `node_modules/@grid-is/spreadsheet-editor/dist/index.d.ts` instead; it is the source of truth.
+Generated from `@grid-is/spreadsheet-editor@0.7.0` (`dist/index.d.ts`). Every public symbol listed here exists in that version. If the installed version differs, read `node_modules/@grid-is/spreadsheet-editor/dist/index.d.ts` instead; it is the source of truth.
 
 ### function SpreadsheetEditor()
 
@@ -143,7 +143,7 @@ timestamp: number
 ### type EditorEvent
 
 ```ts
-type EditorEvent = ViewerEvent | WriteCellEvent | PasteEvent | ClearCellsEvent | FormatCellsEvent | FillEvent | InsertRowEvent | InsertColumnEvent | DeleteRowsEvent | DeleteColumnsEvent | DeleteCellsEvent | InsertCellsEvent | MoveRowsEvent | MoveColumnsEvent | MoveCellsEvent | ResizeRowEvent | ResizeColumnEvent | AddSheetEvent | DeleteSheetEvent | RenameSheetEvent
+type EditorEvent = ViewerEvent | WriteCellEvent | PasteEvent | ClearCellsEvent | FormatCellsEvent | FillEvent | InsertRowEvent | InsertColumnEvent | DeleteRowsEvent | DeleteColumnsEvent | DeleteCellsEvent | InsertCellsEvent | MoveRowsEvent | MoveColumnsEvent | MoveCellsEvent | ResizeRowEvent | ResizeColumnEvent | AddSheetEvent | DeleteSheetEvent | RenameSheetEvent | MergeCellsEvent | UnmergeCellsEvent
 ```
 
 Union of all events emitted by the editor via the `onChange` callback.
