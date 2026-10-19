@@ -2,7 +2,7 @@
 
 # Workbook and WorkSheet: formulas, structure, export
 
-Generated from `@grid-is/spreadsheet-engine@17.1.1` (`dist/index.d.ts`). Every public symbol listed here exists in that version. If the installed version differs, read `node_modules/@grid-is/spreadsheet-engine/dist/index.d.ts` instead; it is the source of truth.
+Generated from `@grid-is/spreadsheet-engine@18.1.0` (`dist/index.d.ts`). Every public symbol listed here exists in that version. If the installed version differs, read `node_modules/@grid-is/spreadsheet-engine/dist/index.d.ts` instead; it is the source of truth.
 
 Formula edits, sheet management, row and column operations, fill, sort, merges, defined names, and XLSX export live on `Workbook`. `WorkSheet` gives per-sheet bounds and cell iteration.
 
@@ -176,9 +176,12 @@ JSF/CSF and is emitted to xlsx as the `calcPr calcMode` attribute.
 - `'auto'` (default): formulas recalculate on every change.
 - `'autoNoTable'`: same as `'auto'`, but data-table anchor cells are
   deferred. Setting this triggers {@link Model.deferDataTables}.
-- `'manual'`: informational. Apiary's engine still recalculates on
-  writes; the value is preserved for round-trip and consumed by callers
-  (e.g. the Office.js compatibility layer) that gate recalc themselves.
+- `'manual'`: `recalcVolatiles`, `recalcUncached` and `recalcAll`
+  default to `false` on load, so this workbook's saved values stand and
+  formula cells with no saved value stay uncomputed, as in Excel.
+  Apiary's engine still recalculates on writes; the value is preserved
+  for round-trip and consumed by callers (e.g. the Office.js
+  compatibility layer) that gate recalc themselves.
 
 The setter drives {@link Model.deferDataTables} in both directions ---
 assigning any value other than `'autoNoTable'` resets `deferDataTables`
@@ -508,7 +511,9 @@ Precondition: formula parser has finished importing (`formulaParserReady` has re
 - `cellRef`: the cell to edit, as a `Reference` or a string representing
 one. If this indicates a range, the top-left cell of that range is
 edited. May also be a name reference (defined name).
-- `cellData`: object with attributes to write to the cell
+- `cellData`: object with attributes to write to the cell. A `dt` property (JSF data-table
+metadata) makes the edited cell the anchor of a what-if data table over `dt.ref`, replacing
+what is there; the next recalculation fills it. `dt: null` removes the table anchored there.
 
 Returns: the existing or new `Cell` instance.
 
@@ -543,16 +548,17 @@ responsible (typically {@link Model.writeMultiple}).
 ### setColumnWidth()
 
 ```ts
-setColumnWidth(sheetName: string, column: number, width: number): void
+setColumnWidth(sheetName: string, column: number, width: number | null): void
 ```
 
 - `column`: 0-based column index
-- `width`: non-negative
+- `width`: non-negative, or `null` to remove the column's own width so it falls back to the
+sheet default; a styled column instead gets the sheet default width as its own
 
 ### setRowHeight()
 
 ```ts
-setRowHeight(sheetName: string, rowNum: number, height: number): void
+setRowHeight(sheetName: string, rowNum: number, height: number | null): void
 ```
 
 Sets the height of a row.
@@ -566,7 +572,58 @@ formula cells as needed. It is up to the caller to make sure a recalculation
 is eventually triggered.
 
 - `rowNum`: 0-based row index
-- `height`: non-negative
+- `height`: non-negative, or `null` to remove the row's own height so it falls back to the
+sheet default
+
+### setRowStyle()
+
+```ts
+setRowStyle(sheetName: string, row: number, patch: StylePatch): void
+```
+
+Apply a style patch to one or more rows.
+
+- `sheetName`: name of the sheet
+- `row`: 0-based row index
+- `patch`: properties to set, or to remove by passing `null`. See {@link StylePatch}.
+
+### setColumnStyle()
+
+```ts
+setColumnStyle(sheetName: string, column: number, patch: StylePatch): void
+```
+
+Apply a style patch to one or more columns.
+
+- `sheetName`: name of the sheet
+- `column`: 0-based column index
+- `patch`: properties to set, or to remove by passing `null`. See {@link StylePatch}.
+
+### getRowStyle()
+
+```ts
+getRowStyle(sheetName: string, row: number): StyleRelaxed | null
+```
+
+Get the style stored on a row.
+
+- `sheetName`: name of the sheet
+- `row`: 0-based row index
+
+Returns: the row's style, or `null` if the row carries no style
+
+### getColumnStyle()
+
+```ts
+getColumnStyle(sheetName: string, column: number): StyleRelaxed | null
+```
+
+Get the style stored on a column.
+
+- `sheetName`: name of the sheet
+- `column`: 0-based column index
+
+Returns: the column's style, or `null` if the column carries no style
 
 ### mergeCells()
 
@@ -613,10 +670,9 @@ If any error is detected in the formula (syntax error, or use of something
 we do not support), abort and return null if `abortOnError` is true, else
 go ahead and make the defined name but record the error with this.addError.
 
-This method does not create a vertex in the dependency graph. If the graph
-is already built (i.e. outside initial workbook construction), the caller
-must call `updateDependencies([dn.vertexId])` on the returned DefinedName
-to register its vertex and outgoing edges.
+Registers the new name in the dependency graph, so that the rewrites driven by it reach the
+name at once. During workbook construction the workbook is not in the graph yet, and the
+model builds the graph for the whole workbook when it attaches it.
 
 - `sheet`: sheet to scope the name to, or null for workbook scope
 - `abortOnError`: true to return null and make no change if formula has any errors
@@ -1012,7 +1068,7 @@ merged_cells: string[]
 ### drawings
 
 ```ts
-drawings: DrawingCSF[]
+drawings: Drawing[]
 ```
 
 ### comments
@@ -1159,11 +1215,58 @@ getBounds(): SlimRange
 ### setColumnWidth()
 
 ```ts
-setColumnWidth(column: number, width: number): void
+setColumnWidth(column: number, width: number | null): void
 ```
 
 - `column`: 0-based column index
-- `width`: non-negative
+- `width`: non-negative, or `null` to remove the column's own width so it falls back to the
+sheet default; a styled column instead gets the sheet default width as its own
+
+### setRowStyle()
+
+```ts
+setRowStyle(row: number, patch: StylePatch): void
+```
+
+Apply a style patch to a row.
+
+- `row`: 0-based row index
+- `patch`: properties to set, or to remove by passing `null`
+
+### setColumnStyle()
+
+```ts
+setColumnStyle(column: number, patch: StylePatch): void
+```
+
+Apply a style patch to a column.
+
+- `column`: 0-based column index
+- `patch`: properties to set, or to remove by passing `null`
+
+### getRowStyle()
+
+```ts
+getRowStyle(row: number): StyleRelaxed | null
+```
+
+Get the style stored on a row.
+
+- `row`: 0-based row index
+
+Returns: a copy of the row's style, or `null` if the row carries no style
+
+### getColumnStyle()
+
+```ts
+getColumnStyle(column: number): StyleRelaxed | null
+```
+
+Get the style stored on a column.
+
+- `column`: 0-based column index
+
+Returns: a copy of the column's style, or `null` if the column carries no style
 
 ### mergeCells()
 
@@ -1522,7 +1625,7 @@ isSpillAnchor(): boolean
 ### edit() (deprecated)
 
 ```ts
-edit(cellData: JSFCellExpanded): void
+edit(cellData: CellData): void
 ```
 
 ### type RewriteFormula

@@ -2,7 +2,7 @@
 
 # Errors: formula error values and thrown errors
 
-Generated from `@grid-is/spreadsheet-engine@17.1.1` (`dist/index.d.ts`). Every public symbol listed here exists in that version. If the installed version differs, read `node_modules/@grid-is/spreadsheet-engine/dist/index.d.ts` instead; it is the source of truth.
+Generated from `@grid-is/spreadsheet-engine@18.1.0` (`dist/index.d.ts`). Every public symbol listed here exists in that version. If the installed version differs, read `node_modules/@grid-is/spreadsheet-engine/dist/index.d.ts` instead; it is the source of truth.
 
 `FormulaError` values flow through cell values and `runFormula` results; they are not thrown. The `Error` subclasses are thrown by edits the engine refuses.
 
@@ -347,12 +347,12 @@ constructor(pivotTableName: string, sheetName: string, cellRef: string)
 
 ## class PivotDuplicateSourceHeadersError extends EditBlockedError
 
-Thrown when refreshing a pivot cache is refused because the source range's header row contains
-two case-insensitively equal column names (including two blank headers, which both read as
-`''`), matching Excel's "PivotTable field name is not valid" refresh error. Rename one of the
-source columns --- or opt into Excel's silent first-match resolution via `refreshCache`'s
-`allowDuplicateHeaders` option --- and refresh again. `sheetName` is the sheet holding the
-pivot's source range.
+Thrown when a pivot cache refresh, or `PivotManager.add`, is refused because the source range's
+header row contains two case-insensitively equal column names (including two blank headers,
+which both read as `''`), matching Excel's "PivotTable field name is not valid" error. Rename one
+of the source columns --- or, for a refresh, opt into Excel's silent first-match resolution via
+`refreshCache`'s `allowDuplicateHeaders` option. `sheetName` is the sheet holding the pivot's
+source range.
 
 ### name
 
@@ -556,10 +556,10 @@ constructor(reason: SortCellsBlockedReason, sheetName: string)
 
 Thrown when a bounded `insertCells`/`deleteCells`, or a `sortCells`, would tear a worksheet
 table (an Excel Table) --- leaving part of it behind, or rearranging structure that is not
-sortable data. A delete may only touch a table by removing whole table rows (shift up) or whole
-table columns (shift left), and a table elsewhere in the shift path must have its full span
-inside the shifted band so it moves whole. A sort may only permute whole rows of a table's data
-body, across the table's full width.
+sortable data --- or when a data table's result range would overlap one. A delete may only touch
+a table by removing whole table rows (shift up) or whole table columns (shift left), and a table
+elsewhere in the shift path must have its full span inside the shifted band so it moves whole. A
+sort may only permute whole rows of a table's data body, across the table's full width.
 
 ### name
 
@@ -709,7 +709,7 @@ The kind of edit a {@link PivotEditBlockedError} refusal is about, for programma
 ### type TableBlockedOperation
 
 ```ts
-type TableBlockedOperation = "insert-cells" | "delete-cells" | "sort"
+type TableBlockedOperation = "insert-cells" | "delete-cells" | "sort" | "create-data-table"
 ```
 
 The kind of edit a {@link TableEditBlockedError} refusal is about, for programmatic handling
@@ -719,5 +719,7 @@ The kind of edit a {@link TableEditBlockedError} refusal is about, for programma
 - `delete-cells` --- a bounded `deleteCells` taking part of the table without removing whole
   table rows or whole table columns, or whose shift would move only part of it;
 - `sort` --- a `sortCells` whose range reaches outside the table's data body, or covers only
-  part of its columns.
+  part of its columns;
+- `create-data-table` --- an {@link Workbook.editCell} with `dt` whose result range overlaps the
+  table.
 

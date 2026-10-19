@@ -2,7 +2,7 @@
 
 # @grid-is/spreadsheet-editor API
 
-Generated from `@grid-is/spreadsheet-editor@0.6.0` (`dist/index.d.ts`). Every public symbol listed here exists in that version. If the installed version differs, read `node_modules/@grid-is/spreadsheet-editor/dist/index.d.ts` instead; it is the source of truth.
+Generated from `@grid-is/spreadsheet-editor@0.10.0` (`dist/index.d.ts`). Every public symbol listed here exists in that version. If the installed version differs, read `node_modules/@grid-is/spreadsheet-editor/dist/index.d.ts` instead; it is the source of truth.
 
 ### function SpreadsheetEditor()
 
@@ -143,7 +143,7 @@ timestamp: number
 ### type EditorEvent
 
 ```ts
-type EditorEvent = ViewerEvent | WriteCellEvent | PasteEvent | ClearCellsEvent | FormatCellsEvent | FillEvent | InsertRowEvent | InsertColumnEvent | DeleteRowsEvent | DeleteColumnsEvent | DeleteCellsEvent | InsertCellsEvent | MoveRowsEvent | MoveColumnsEvent | MoveCellsEvent | ResizeRowEvent | ResizeColumnEvent | AddSheetEvent | DeleteSheetEvent | RenameSheetEvent
+type EditorEvent = ViewerEvent | WriteCellEvent | PasteEvent | ClearCellsEvent | FormatCellsEvent | FillEvent | InsertRowEvent | InsertColumnEvent | DeleteRowsEvent | DeleteColumnsEvent | DeleteCellsEvent | InsertCellsEvent | MoveRowsEvent | MoveColumnsEvent | MoveCellsEvent | ResizeRowEvent | ResizeColumnEvent | AddSheetEvent | DeleteSheetEvent | RenameSheetEvent | MergeCellsEvent | UnmergeCellsEvent
 ```
 
 Union of all events emitted by the editor via the `onChange` callback.
@@ -578,7 +578,7 @@ timestamp: number
 
 Unix-epoch millisecond timestamp of when the change occurred.
 
-## interface SpreadsheetEditorController
+## interface SpreadsheetController
 
 ### focus
 
@@ -586,17 +586,31 @@ Unix-epoch millisecond timestamp of when the change occurred.
 focus: (ref?: string) => void
 ```
 
+Puts the keyboard cursor in the sheet.
+
 ### highlightRefs
 
 ```ts
 highlightRefs: (refs: string[], timeInMs?: number) => void
 ```
 
+Briefly highlights cells.
+
+### overlays
+
+```ts
+overlays: SpreadsheetOverlays
+```
+
+Host UI placed on top of cells.
+
 ### selectCells
 
 ```ts
-selectCells: (ref: string) => void
+selectCells: (ref: string, reveal?: "minimal" | "center") => void
 ```
+
+Selects cells and brings them into view, with the least scrolling unless told to center.
 
 ### selectSheet
 
@@ -604,12 +618,76 @@ selectCells: (ref: string) => void
 selectSheet: (sheetName: string) => void
 ```
 
+Opens a sheet.
+
 ### type SpreadsheetModel
 
 ```ts
 type SpreadsheetModel = {
   getWorkbook: (name?: string | null) => SpreadsheetWorkbook | undefined | null;
 }
+```
+
+## interface SpreadsheetOverlay
+
+Host UI placed on top of cells.
+
+### target
+
+```ts
+target: string
+```
+
+A1 reference to the cells it covers.
+
+### element
+
+```ts
+element: HTMLElement
+```
+
+### interactive
+
+```ts
+interactive?: boolean
+```
+
+Receives pointer events instead of the cells under it.
+
+## interface SpreadsheetOverlays
+
+### add
+
+```ts
+add: (overlay: SpreadsheetOverlay) => string
+```
+
+Returns the id that `update` and `remove` take.
+
+### update
+
+```ts
+update: (id: string, patch: Partial<SpreadsheetOverlay>) => void
+```
+
+### remove
+
+```ts
+remove: (id: string) => void
+```
+
+### all
+
+```ts
+all: () => Array<SpreadsheetOverlay & {
+    id: string;
+  }>
+```
+
+### clear
+
+```ts
+clear: () => void
 ```
 
 ## interface SpreadsheetSize

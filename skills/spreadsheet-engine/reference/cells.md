@@ -2,7 +2,7 @@
 
 # Cells, values and references
 
-Generated from `@grid-is/spreadsheet-engine@17.1.1` (`dist/index.d.ts`). Every public symbol listed here exists in that version. If the installed version differs, read `node_modules/@grid-is/spreadsheet-engine/dist/index.d.ts` instead; it is the source of truth.
+Generated from `@grid-is/spreadsheet-engine@18.1.0` (`dist/index.d.ts`). Every public symbol listed here exists in that version. If the installed version differs, read `node_modules/@grid-is/spreadsheet-engine/dist/index.d.ts` instead; it is the source of truth.
 
 The shape of a cell as returned by `readCell` and `readCells`, the value types formulas produce, and the helpers for A1 references and coordinates.
 
@@ -294,7 +294,7 @@ get sheetIndex(): number | null
 ### edit() (deprecated)
 
 ```ts
-edit(cellData: JSFCellExpanded): void
+edit(cellData: CellData): void
 ```
 
 ### z
@@ -367,15 +367,24 @@ isSpillAnchor(): boolean
 ### type CellData
 
 ```ts
-type CellData = JSFCellExpanded & {
-  /** User-assigned number format (convenience shortcut for style.numberFormat) */ z?: string | null; /** Formula-assigned number format (convenience shortcut for style.numberFormatFromFormula) */
+type CellData = Omit<Cell, "f" | "v" | "s" | "dt"> & {
+  /** Formula string (never an index into the workbook's formulas) */ f?: string | null;
+  /**
+   * What-if data table metadata. On an edit, establishes (or replaces) a data table anchored at
+   * the edited cell; `null` removes the data table anchored there. See {@link Workbook.editCell}.
+   */
+  dt?: DataTable | null; /** Cell value, which may be a {@link FormulaError} */
+  v?: string | number | boolean | FormulaError | null; /** Style index, or {@link Style} object */
+  s?: number | Style | null; /** User-assigned number format (convenience shortcut for style.numberFormat) */
+  z?: string | null; /** Formula-assigned number format (convenience shortcut for style.numberFormatFromFormula) */
   zf?: string | null; /** Formula type: `'a'` for array formula */
   ft?: "a" | null;
 }
 ```
 
-Extended cell data type that includes z/zf for backwards compatibility.
-These properties are convenience shortcuts specifying number formats directly in cell data.
+Cell data, as passed to {@link Workbook.editCell}: the JSF {@link JSFCell} type, except
+that `f`, `v` and `s` are typed as below and `z`, `zf` and `ft` are added. `null` in `f`, `v`,
+`s` or `z` clears that field in an edit.
 
 ### type CellItem
 
@@ -659,12 +668,14 @@ toString(): string
 ### setData()
 
 ```ts
-setData(data: AreaValueArray | AreaBoxedValueArray | MaybeBoxed<ArrayValue>[][]): this
+setData(data: AreaValueArray | AreaBoxedValueArray | MaybeBoxed<ArrayValue>[][], borrowRows?: boolean): this
 ```
 
 Populate this matrix with the given data array.
-The rows in `data` will be referenced, not copied, so `data` should be
-considered to belong to this matrix henceforth, i.e. not mutated elsewhere.
+The rows in `data` will be referenced, not copied, so by default `data` should be considered
+to belong to this matrix henceforth, i.e. not mutated elsewhere. Pass `borrowRows` where the
+rows belong to someone else, such as a resolved area also handed to other callers: the
+matrix then copies them all before writing into any.
 
 ### set()
 
@@ -1519,7 +1530,7 @@ sheets as the forward spelling.
 - `resolver`: the evaluation context to resolve in; defaults to this reference's own
 
 Returns: the workbook and the sheets the span covers, or a `FormulaError` if the workbook is
-not found or either endpoint names no sheet in it
+not found or either endpoint names a nonexistent sheet
 
 ### expandSheetSpan()
 
@@ -1537,7 +1548,7 @@ unchanged).
 - `resolver`: the evaluation context to resolve in; defaults to this reference's own
 
 Returns: one reference per covered sheet, or a `FormulaError` if the workbook is not found or
-either endpoint names no sheet in it
+either endpoint names a nonexistent sheet
 
 ### resolveAreaCells()
 
@@ -1640,7 +1651,7 @@ The reference must have a context, else this will throw.
 
 ```ts
 resolveName(opts?: EvaluationContext): {
-    resolved: MaybeBoxedFormulaValue;
+    resolved: MaybeBoxedFormulaArgument;
     nameCell?: DefinedName;
   }
 ```
@@ -1665,8 +1676,9 @@ dependent cells.
 - `opts`: the evaluation context, if not this.ctx
 
 Returns: resolved: the result of evaluating the named formula (`#NAME?` if
-the name is not found), and nameCell: the defined-name cell object to
-which the name was resolved
+the name is not found, `MISSING` for a LET variable bound to an omitted
+argument), and nameCell: the defined-name cell object to which the name
+was resolved
 
 ### resolveToNonName()
 
@@ -1683,7 +1695,8 @@ this reference is already not a name reference, just return `this`.
 
 Returns: this reference if it is not a name reference, else the first defined-name formula result
 that isn't a name reference, else `ERROR_NAME` if defined-name formula results form a loop of name references
-leading back to this reference. Guaranteed not to return a name reference.
+leading back to this reference. Guaranteed not to return a name reference. A LET variable
+bound to an omitted argument resolves to blank.
 
 ### prefix()
 
@@ -2272,7 +2285,7 @@ merged_cells: string[]
 ### drawings
 
 ```ts
-drawings: DrawingCSF[]
+drawings: Drawing[]
 ```
 
 ### comments
@@ -2419,11 +2432,58 @@ getBounds(): SlimRange
 ### setColumnWidth()
 
 ```ts
-setColumnWidth(column: number, width: number): void
+setColumnWidth(column: number, width: number | null): void
 ```
 
 - `column`: 0-based column index
-- `width`: non-negative
+- `width`: non-negative, or `null` to remove the column's own width so it falls back to the
+sheet default; a styled column instead gets the sheet default width as its own
+
+### setRowStyle()
+
+```ts
+setRowStyle(row: number, patch: StylePatch): void
+```
+
+Apply a style patch to a row.
+
+- `row`: 0-based row index
+- `patch`: properties to set, or to remove by passing `null`
+
+### setColumnStyle()
+
+```ts
+setColumnStyle(column: number, patch: StylePatch): void
+```
+
+Apply a style patch to a column.
+
+- `column`: 0-based column index
+- `patch`: properties to set, or to remove by passing `null`
+
+### getRowStyle()
+
+```ts
+getRowStyle(row: number): StyleRelaxed | null
+```
+
+Get the style stored on a row.
+
+- `row`: 0-based row index
+
+Returns: a copy of the row's style, or `null` if the row carries no style
+
+### getColumnStyle()
+
+```ts
+getColumnStyle(column: number): StyleRelaxed | null
+```
+
+Get the style stored on a column.
+
+- `column`: 0-based column index
+
+Returns: a copy of the column's style, or `null` if the column carries no style
 
 ### mergeCells()
 

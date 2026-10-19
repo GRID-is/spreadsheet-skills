@@ -2,7 +2,7 @@
 
 # Model: loading, reading, writing, recalculation
 
-Generated from `@grid-is/spreadsheet-engine@17.1.1` (`dist/index.d.ts`). Every public symbol listed here exists in that version. If the installed version differs, read `node_modules/@grid-is/spreadsheet-engine/dist/index.d.ts` instead; it is the source of truth.
+Generated from `@grid-is/spreadsheet-engine@18.1.0` (`dist/index.d.ts`). Every public symbol listed here exists in that version. If the installed version differs, read `node_modules/@grid-is/spreadsheet-engine/dist/index.d.ts` instead; it is the source of truth.
 
 `Model` is the entry point. It holds one or more workbooks and the shared dependency graph. Value writes recalculate automatically; formula edits go through `Workbook.editCell` and need `model.recalculate(ALL_FORMULA_CELLS)`.
 
@@ -554,6 +554,12 @@ isGlobal(cellRef: string, workbookName?: string): boolean
 
 - `workbookName`: name of a workbook to look in, if `cellRef` does not have a workbook prefix
 
+### emit()
+
+```ts
+emit(event: string, ...args: unknown[]): ReturnType<typeof emitter>
+```
+
 ### on()
 
 ```ts
@@ -615,10 +621,19 @@ This method triggers the recalculation engine to evaluate formulas based on the 
 graph. It emits a 'beforerecalc' event before starting, handles any errors during calculation,
 and triggers an update event when complete.
 
+If the recalculation throws, the error is reported as a model error and the pending
+change-tracking state is kept, so a later call can retry the affected cells instead of leaving
+them stale. The retry is fully effective only when the failure occurred before cell evaluation
+began (e.g. during recalc prep): a failure partway through evaluation leaves cells marked with
+the aborted run's recalc-state numbers, which the retry reuses (`upToDateState` advances only
+on success), so it may take those cells to be already computed and never reach their stale
+dependents.
+
 If any sheets have GSDV cells (which should only happen if this is the initial recalculation),
 then `Cells.clearGsdv` is called and if any cells are deleted as a result, a second initial
 recalculation is performed (with CHANGED_ONLY, so not updating volatiles again) to update
-formulas depending on them.
+formulas depending on them. That second recalculation is skipped when the recalculation above
+threw, because the changed cells are then left queued for a later retry to pick up.
 
 - `options`: - Controls which cells to recalculate. Can be a
 `WhichCellsToRecalculate` symbol or a {@link RecalculateOptions} object:
@@ -774,15 +789,6 @@ If `single` is false and `values` is true, this returns an `AreaValueArray`.
 If `single` is true and `values` is false, this returns a `Cell`.
 If `single` is true and `values` is true, this returns a `CellValue`.
 
-### analyzeFormula() (deprecated)
-
-```ts
-analyzeFormula(formula: string, options?: {
-    sheetName?: string;
-    workbookName?: string | null;
-  }): AnalyzeFormulaResult
-```
-
 ### analyzeAndFixFormula()
 
 ```ts
@@ -824,7 +830,11 @@ get meta(): ModelMeta
 recalcVolatiles?: boolean
 ```
 
-Whether to recalculate volatile cells on init. Assumed true if not specified.
+Whether to recalculate volatile cells on init.
+
+If unset, defaults to `true` unless the workbook's `calculationProperties.calcMode` is
+`"manual"`, in which case it defaults to `false`: such a workbook's saved values are what
+Excel shows on open. An explicit setting wins in either direction.
 
 ### recalcErrors
 
@@ -832,7 +842,28 @@ Whether to recalculate volatile cells on init. Assumed true if not specified.
 recalcErrors?: boolean
 ```
 
-Whether to recalculate cells with error values on init. Assumed true if not specified.
+Whether to recalculate cells whose saved value is an error, on init. Assumed false if not
+specified: the saved error is kept, as Excel keeps it on open.
+
+Turning it on attaches an `origin` reference to each such error, and a `detail` message where
+the engine produces one; no file format stores either. It also replaces the saved error code
+wherever the engine's own result differs, and in an error-heavy workbook the recalculation
+can reach most of the model.
+
+### recalcUncached
+
+```ts
+recalcUncached?: boolean
+```
+
+Whether to evaluate, on init, formula cells that the file cached no value for, instead of
+leaving them blank until a full recalculation. Defaults the same way as
+{@link recalcVolatiles}: `true` unless the workbook's `calculationProperties.calcMode` is
+`"manual"`, where Excel leaves such cells uncomputed on open. Formula cells that depend on such
+a cell are recalculated with it. A cell whose formula references something
+unresolvable (a missing defined name, sheet or workbook, or a function nothing implements)
+reads `#NAME?` or `#REF!`, and a later attach that resolves the reference recalculates it even
+when that attach's other recalc options are off. {@link recalcAll} supersedes this option.
 
 ### recalcAll
 
@@ -848,10 +879,11 @@ If unset, defaults to `true` when the workbook's `calculationProperties.fullCalc
 overrides what the file says, in either direction.
 
 When effective, this runs an `ALL_FORMULA_CELLS` recalc over every workbook in the model,
-not just the one being attached --- stronger than {@link recalcVolatiles} or
-{@link recalcErrors}. Such a recalc evaluates even deferred data-table cells, so a workbook
-with both `calcMode: "autoNoTable"` and `fullCalcOnLoad` has its data tables evaluated once
-at load, as in Excel; {@link Model.deferDataTables} still applies to later recalculations.
+not just the one being attached --- stronger than {@link recalcVolatiles},
+{@link recalcErrors} or {@link recalcUncached}. Such a recalc evaluates even deferred
+data-table cells, so a workbook with both `calcMode: "autoNoTable"` and `fullCalcOnLoad` has
+its data tables evaluated once at load, as in Excel; {@link Model.deferDataTables} still
+applies to later recalculations.
 
 ### extractExpressions
 
@@ -1069,6 +1101,29 @@ type ModelEventArgs = {
     workbookName: string;
     sheetName: string;
     index: number;
+  }; /** Emitted by a workbook when a sheet is renamed, before the recalc that follows. */
+  renamesheet: {
+    workbookName: string;
+    oldName: string;
+    newName: string;
+    index: number;
+  }; /** Emitted by a workbook when a sheet is removed, before the recalc that follows. */
+  removesheet: {
+    workbookName: string;
+    sheetName: string;
+    index: number;
+  };
+  /**
+   * Emitted when a listener for another event throws. Listeners run in order and one that throws
+   * stops neither the others nor the engine call that emitted the event. With no listener for
+   * this event the exception is logged with `console.error`, as is a throw from a listener for
+   * this event itself. `recalcEvent` listeners are the exception: that stream is emitted from
+   * inside cell evaluation and a throw there aborts the recalc and does not trigger `listenererror`
+   * events.
+   */
+  listenererror: {
+    event: string;
+    error: unknown;
   }; /** Emitted at the start of {@link Model.recalculate}, before any cell is recalculated. Payload is the model. */
   beforerecalc: Model; /** Emitted at the end of {@link Model.recalculate}. Payload is the model. */
   recalc: Model;
