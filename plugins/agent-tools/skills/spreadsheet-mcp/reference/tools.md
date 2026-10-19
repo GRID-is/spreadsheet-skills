@@ -2,7 +2,7 @@
 
 # @grid-is/agent-tools: tool catalogue
 
-Generated from `@grid-is/agent-tools@0.3.3` by calling `createGridTools()`. 28 tools. Every tool operates on the active workbook, the one most recently loaded, created or selected. Parameter types are the JSON Schema derived from each tool's zod schema.
+Generated from `@grid-is/agent-tools@0.4.0` by calling `createGridTools()`. 28 tools. Every tool operates on the active workbook, the one most recently loaded, created or selected. Parameter types are the JSON Schema derived from each tool's zod schema.
 
 ## Workbook lifecycle
 
@@ -87,7 +87,7 @@ Render a worksheet rectangle as a compact text grid — by default the displayed
 Use this FIRST to scan or orient in an area (a financial statement, a block, a table): one call returns the whole rectangle instead of reading it cell-by-cell.
 Pass `show` to audit other layers of the same grid: raw unformatted values, a style property ('-' marks unset cells), or the formula structure — formula cells get a legend key, identical fills share one key, so a miscolored cell, a wrong format, or a hardcoded override stands out against the value grid you just read.
 For precedents/dependents or error provenance, use `inspect`.
-Returns at most 500 cells; a larger rectangle renders the cells that fit and names the rows or columns that remain — request those in a follow-up call.
+Returns at most 500 cells; a larger rectangle marks the cut with *** TRUNCATED *** and ends with a note naming the rows or columns that remain — request those in a follow-up call.
 
 Examples:
 - Range: { "reference": "B40:N80" }
@@ -99,7 +99,7 @@ Examples:
 | Parameter | Type | Required | Description |
 |---|---|---|---|
 | `reference` | `string` | yes | A1 range to view, sheet-qualified where needed (e.g. "'LBO Model'!B40:N80"). A single cell is allowed. |
-| `show` | `"value" \| "rawValue" \| "fontColor" \| "fill" \| "numberFormat" \| "formula"` | no | What each cell renders. 'value' (default): formatted display values; a † marks a number whose format hides that it is numeric (a date, an accounting dash) — a legend below the grid explains it. 'rawValue': underlying unformatted values. 'fontColor'/'fill'/'numberFormat': that style property ('-' when unset; colors as lowercase hex for RGB, raw token for theme/preset/indexed colors). 'formula': formula cells render a short key like [1] with a legend below the grid — formulas are compared in R1C1 form, so a formula filled across a range shares one key and anomalies stand out; non-formula cells show their raw value, so hardcoded overrides stand out too. |
+| `show` | `"value" \| "rawValue" \| "fontColor" \| "fill" \| "numberFormat" \| "formula"` | no | What each cell renders. 'value' (default): formatted display values; a † marks a number whose format hides that it is numeric (a date, an accounting dash) — a legend below the grid explains it. 'rawValue': underlying unformatted values. 'fontColor'/'fill'/'numberFormat': that style property ('-' when unset; colors as lowercase hex for RGB, raw token for theme/preset/indexed colors). 'formula': formula cells render a short key like [1] with a legend below the grid; text results appear alongside the key (e.g. Units sold [1]) — formulas are compared in R1C1 form, so a formula filled across a range shares one key and anomalies stand out; non-formula cells show their raw value, so hardcoded overrides stand out too. |
 
 ### captureRange
 
@@ -235,7 +235,7 @@ Both modes use maxDepth (default 10, max 50) to bound recursion and maxNodes (de
 
 ### listErrors
 
-List all formula errors and model errors in a workbook, grouped by error kind. Results are scoped to a sheet or range when provided, and truncated per group when the default cell limit is exceeded.
+List all formula errors and model errors in a workbook, grouped by error, detail and origin (the cell where the error arose). Errors saved in the file are recalculated to find their origin and detail. Results are scoped to a sheet or range when provided, and truncated per group when the default cell limit is exceeded.
 
 | Parameter | Type | Required | Description |
 |---|---|---|---|

@@ -184,7 +184,7 @@ Docs: <https://docs.grid.is/spreadsheet-viewer/>.
 Written and verified against:
 
 - `@grid-is/spreadsheet-viewer@3.1.1`
-- `@grid-is/spreadsheet-engine@17.1.1`
+- `@grid-is/spreadsheet-engine@18.1.0`
 <!-- /generated:versions -->
 
 If the installed `@grid-is/spreadsheet-viewer` is newer than the version above, read

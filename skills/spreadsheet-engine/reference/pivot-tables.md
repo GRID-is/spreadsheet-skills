@@ -2,7 +2,7 @@
 
 # Pivot tables
 
-Generated from `@grid-is/spreadsheet-engine@17.1.1` (`dist/index.d.ts`). Every public symbol listed here exists in that version. If the installed version differs, read `node_modules/@grid-is/spreadsheet-engine/dist/index.d.ts` instead; it is the source of truth.
+Generated from `@grid-is/spreadsheet-engine@18.1.0` (`dist/index.d.ts`). Every public symbol listed here exists in that version. If the installed version differs, read `node_modules/@grid-is/spreadsheet-engine/dist/index.d.ts` instead; it is the source of truth.
 
 Pivot table support as exposed by the type definitions. Check the docs for the current release status before relying on it.
 
@@ -44,6 +44,55 @@ removals do not affect the returned array. Iterate the manager itself for the li
 ```
 
 Iterate the workbook's pivot tables in insertion order (live, unlike {@link getAll}).
+
+### add()
+
+```ts
+add(options: PivotAddOptions, behavior?: {
+    skipRecalc?: boolean;
+  }): PivotTable
+```
+
+Create a pivot table over a worksheet source range, register it, write its output on
+`options.sheetName` and recalculate the model. The source's header row names the fields. The
+table shares an existing cache over the same source range and headers, and otherwise gets one
+of its own, refreshed from the source. A failure leaves nothing behind: the table, its cells
+and an unshared cache are removed again.
+
+- `behavior.skipRecalc`: skip the recalculation call; the output region is still marked
+changed
+
+### update()
+
+```ts
+update(pt: PivotTable, mutate: (pt: PivotTable) => void, options?: {
+    skipRecalc?: boolean;
+  }): void
+```
+
+Edit a registered pivot table in place. `mutate` runs with the table's mutators unlocked
+(`rename`, `setLayoutForm`, the field, item and measure handles, ...); then the definition is
+normalized, the output rewritten and the model recalculated. If `mutate` throws, or the new
+output does not fit, the definition is restored, the cells are left as they were and the
+error propagates. While `mutate` runs, structural edits to the pivot's sheet (inserting,
+deleting or moving rows, columns or cells; renaming, copying or removing the sheet) and a
+refresh of its cache are refused.
+
+- `options.skipRecalc`: skip the recalculation call; the changed output regions are still
+marked changed
+
+### delete()
+
+```ts
+delete(pt: PivotTable, options?: {
+    skipRecalc?: boolean;
+  }): void
+```
+
+Remove a registered pivot table, clearing its cells (values, styles, number formats) and
+dropping a cache no other pivot table references.
+
+- `options.skipRecalc`: skip the recalculation call; the vacated region is still marked changed
 
 ### refreshCache()
 
@@ -137,12 +186,6 @@ the first registered pivot wins on ambiguous overlaps.
 Runtime representation of a pivot table. Wraps the JSF PivotTable definition and provides
 methods for computing layout, writing to sheet cells, and looking up values for GETPIVOTDATA.
 
-### jsf
-
-```ts
-readonly jsf: PivotTable
-```
-
 ### cacheIndex
 
 ```ts
@@ -154,17 +197,19 @@ serialization correlation; runtime lookups go through the attached cache directl
 because the invariant "matches `manager._caches.indexOf(_cache)`" must be updated atomically
 with the cache attachment.
 
-### new PivotTable()
-
-```ts
-constructor(jsf: PivotTable)
-```
-
 ### name
 
 ```ts
 get name(): string
 ```
+
+### cache
+
+```ts
+get cache(): PivotCache | null
+```
+
+The live cache this pivot table computes from (possibly shared), or null before it is bound.
 
 ### sheet
 
@@ -195,6 +240,45 @@ get colFieldIndices(): readonly number[]
 ```
 
 Column field indices with negative placeholders (e.g. -2 for "Values") filtered out.
+
+### fields
+
+```ts
+get fields(): readonly PivotField[]
+```
+
+### rowFields
+
+```ts
+get rowFields(): readonly PivotField[]
+```
+
+### colFields
+
+```ts
+get colFields(): readonly PivotField[]
+```
+
+### pageFields
+
+```ts
+get pageFields(): readonly PivotField[]
+```
+
+### addMeasure()
+
+```ts
+addMeasure(field: PivotField, options?: {
+    name?: string;
+    aggregation?: PivotDataFieldAggregation;
+  }): PivotMeasure
+```
+
+### measures
+
+```ts
+get measures(): readonly PivotMeasure[]
+```
 
 ### dataFields
 
@@ -230,13 +314,66 @@ get location(): import("@jsfkit/types").PivotTableLocation
 ### rowGrandTotals
 
 ```ts
-get rowGrandTotals(): boolean | undefined
+get rowGrandTotals(): boolean
 ```
 
 ### colGrandTotals
 
 ```ts
-get colGrandTotals(): boolean | undefined
+get colGrandTotals(): boolean
+```
+
+### layoutForm
+
+```ts
+get layoutForm(): "compact" | "outline" | "tabular"
+```
+
+The report layout form, read from the fields on the row and column axes: the form is recorded
+per field and the layout renders from those flags, while the root `compact` and `outline` are
+the defaults for a field placed later. Fields that disagree report the least tabular form among
+them, compact before outline. A definition with no axis field reports the root's form.
+
+### showMissing
+
+```ts
+get showMissing(): boolean
+```
+
+### missingCaption
+
+```ts
+get missingCaption(): string | undefined
+```
+
+### rename()
+
+```ts
+rename(newName: string): void
+```
+
+### setGrandTotals()
+
+```ts
+setGrandTotals(axis: "row" | "col", enabled: boolean): void
+```
+
+### setLayoutForm()
+
+```ts
+setLayoutForm(form: "compact" | "outline" | "tabular"): void
+```
+
+### setShowMissing()
+
+```ts
+setShowMissing(show: boolean): void
+```
+
+### setMissingCaption()
+
+```ts
+setMissingCaption(caption: string | undefined): void
 ```
 
 ### style
@@ -364,12 +501,6 @@ area by Excel convention, and the adopted-output export scrub deliberately reads
 
 Runtime representation of a pivot cache: wraps the JSF `PivotCache` definition and exposes
 resolved records with shared-item indices replaced by actual values.
-
-### jsf
-
-```ts
-readonly jsf: PivotCache
-```
 
 ### resolvedRecords
 
