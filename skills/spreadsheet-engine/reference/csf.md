@@ -2,7 +2,7 @@
 
 # CSF types (SheetJS Common Spreadsheet Format)
 
-Generated from `@grid-is/spreadsheet-engine@17.1.1` (`dist/index.d.ts`). Every public symbol listed here exists in that version. If the installed version differs, read `node_modules/@grid-is/spreadsheet-engine/dist/index.d.ts` instead; it is the source of truth.
+Generated from `@grid-is/spreadsheet-engine@18.3.0` (`dist/index.d.ts`). Every public symbol listed here exists in that version. If the installed version differs, read `node_modules/@grid-is/spreadsheet-engine/dist/index.d.ts` instead; it is the source of truth.
 
 Types accepted by `Model.fromCsf` and produced by `Workbook.toCSF`.
 
@@ -44,11 +44,14 @@ type SheetCSF = {
 
 ```ts
 type CellCSF = {
-  /** Formula text (e.g. 'SUM(A1:A4)')*/ f?: string | null;
+  /** Formula text (e.g. 'SUM(A1:A4)')*/
+  f?: string | null;
   /**
-   * Formula type: 'a' = array formula, or absent to mean single-cell formula,
-   * in CSF versions after we introduce this our .xlsx processor. Before that CSF
-   * version change, this is always absent in CSF delivered from the GRID API.
+   * Formula type: 'a' = array formula (legacy CSE or dynamic-array, CSF
+   * does not distinguish), or absent to mean single-cell formula, in CSF
+   * versions after we introduce this our .xlsx processor. Before that CSF
+   * version change, this is always absent in CSF delivered from the GRID
+   * API.
    */
   ft?: "a";
   /**
@@ -58,15 +61,19 @@ type CellCSF = {
    * cells from CSF. Yes, this does mean that we cannot currently represent such
    * string values in CSF!
    */
-  v?: string | number | boolean | FormulaError | null; /** Cell's user-assigned number format */
-  z?: string | null; /** Cell's formula-assigned number format, propagated from other cells */
+  v?: string | number | boolean | FormulaError | null;
+  /** Cell's user-assigned number format */
+  z?: string | null;
+  /** Cell's formula-assigned number format, propagated from other cells */
   zf?: string | null;
   /**
    * Style index (into styles array, present in API responses but replaced by s
    * by assigning from styles array to individual cells on load
    */
-  si?: number; /** Styles/theme of the cell */
-  s?: CellStyle | null; /** A URL to an external resource */
+  si?: number;
+  /** Styles/theme of the cell */
+  s?: CellStyle | null;
+  /** A URL to an external resource */
   href?: string | null;
   /**
    * Spill range of the cell (e.g. 'A2:B4').

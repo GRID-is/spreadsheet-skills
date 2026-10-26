@@ -2,7 +2,7 @@
 
 # describeWorkbook: labelled inputs, outputs and data regions
 
-Generated from `@grid-is/spreadsheet-engine@17.1.1` (`dist/index.d.ts`). Every public symbol listed here exists in that version. If the installed version differs, read `node_modules/@grid-is/spreadsheet-engine/dist/index.d.ts` instead; it is the source of truth.
+Generated from `@grid-is/spreadsheet-engine@18.3.0` (`dist/index.d.ts`). Every public symbol listed here exists in that version. If the installed version differs, read `node_modules/@grid-is/spreadsheet-engine/dist/index.d.ts` instead; it is the source of truth.
 
 `describeWorkbook(workbook)` analyses a workbook and returns labelled parameters (inputs), calculated cells (outputs) and data islands with detected headers. `toString()` gives a plain-text description suitable for a prompt.
 
@@ -178,7 +178,9 @@ labelString: (label: Label) => string
 
 ```ts
 type Parameter = Labeled & {
-  /** The cell may be null if the cell address is depended on but is not populated in the workbook */ cell: Cell | null; /** More specific type than in `Labeled`, as parameters are sheet cells */
+  /** The cell may be null if the cell address is depended on but is not populated in the workbook */
+  cell: Cell | null;
+  /** More specific type than in `Labeled`, as parameters are sheet cells */
   vertexId: CellVertexId;
 }
 ```

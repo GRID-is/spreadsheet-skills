@@ -163,7 +163,7 @@ For writing values and formulas, export and everything else on `Model` and `Work
 <!-- generated:versions -->
 Written and verified against:
 
-- `@grid-is/spreadsheet-engine@17.1.1`
+- `@grid-is/spreadsheet-engine@18.3.0`
 <!-- /generated:versions -->
 
 If the installed `@grid-is/spreadsheet-engine` is newer than the version above, grep
