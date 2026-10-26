@@ -2,7 +2,7 @@
 
 # @grid-is/agent-tools API (package root)
 
-Generated from `@grid-is/agent-tools@0.3.3` (`dist/index.d.ts`). Every public symbol listed here exists in that version. If the installed version differs, read `node_modules/@grid-is/agent-tools/dist/index.d.ts` instead; it is the source of truth.
+Generated from `@grid-is/agent-tools@0.5.0` (`dist/index.d.ts`). Every public symbol listed here exists in that version. If the installed version differs, read `node_modules/@grid-is/agent-tools/dist/index.d.ts` instead; it is the source of truth.
 
 The stateful, file-based tool set and the MCP server helpers. See tools.md for the tool catalogue.
 

@@ -2,7 +2,7 @@
 
 # Pivot tables
 
-Generated from `@grid-is/spreadsheet-engine@17.1.1` (`dist/index.d.ts`). Every public symbol listed here exists in that version. If the installed version differs, read `node_modules/@grid-is/spreadsheet-engine/dist/index.d.ts` instead; it is the source of truth.
+Generated from `@grid-is/spreadsheet-engine@18.3.0` (`dist/index.d.ts`). Every public symbol listed here exists in that version. If the installed version differs, read `node_modules/@grid-is/spreadsheet-engine/dist/index.d.ts` instead; it is the source of truth.
 
 Pivot table support as exposed by the type definitions. Check the docs for the current release status before relying on it.
 
@@ -45,6 +45,55 @@ removals do not affect the returned array. Iterate the manager itself for the li
 
 Iterate the workbook's pivot tables in insertion order (live, unlike {@link getAll}).
 
+### add()
+
+```ts
+add(options: PivotAddOptions, behavior?: {
+    skipRecalc?: boolean;
+  }): PivotTable
+```
+
+Create a pivot table over a worksheet source range, register it, write its output on
+`options.sheetName` and recalculate the model. The source's header row names the fields. The
+table shares an existing cache over the same source range and headers, and otherwise gets one
+of its own, refreshed from the source. A failure leaves nothing behind: the table, its cells
+and an unshared cache are removed again.
+
+- `behavior.skipRecalc`: skip the recalculation call; the output region is still marked
+changed
+
+### update()
+
+```ts
+update(pt: PivotTable, mutate: (pt: PivotTable) => void, options?: {
+    skipRecalc?: boolean;
+  }): void
+```
+
+Edit a registered pivot table in place. `mutate` runs with the table's mutators unlocked
+(`rename`, `setLayoutForm`, the field, item and measure handles, ...); then the definition is
+normalized, the output rewritten and the model recalculated. If `mutate` throws, or the new
+output does not fit, the definition is restored, the cells are left as they were and the
+error propagates. While `mutate` runs, structural edits to the pivot's sheet (inserting,
+deleting or moving rows, columns or cells; renaming, copying or removing the sheet) and a
+refresh of its cache are refused.
+
+- `options.skipRecalc`: skip the recalculation call; the changed output regions are still
+marked changed
+
+### delete()
+
+```ts
+delete(pt: PivotTable, options?: {
+    skipRecalc?: boolean;
+  }): void
+```
+
+Remove a registered pivot table, clearing its cells (values, styles, number formats) and
+dropping a cache no other pivot table references.
+
+- `options.skipRecalc`: skip the recalculation call; the vacated region is still marked changed
+
 ### refreshCache()
 
 ```ts
@@ -66,7 +115,11 @@ Field-level changes in source headers are reconciled against the cache
 
 - REORDERED columns: remap by name; pivot keeps the same logical fields.
 - RENAMED or DELETED (header cleared): the cache field is removed and every PT reference
-  (data, row/col, page) is silently dropped.
+  (data, row/col, page) is silently dropped; the column comes back as a new field, named by
+  its new header or, when the header was cleared, `Field<n>` by its position (see
+  {@link sourceHeaderNames}). So after a delete of the whole source range (which keeps the
+  ref), the fields become `Field1..Field<k>` and the pivot table loses every field reference,
+  except to a field already named `Field<n>` for its column.
 - DUPLICATE column names (case-insensitive): throw {@link PivotDuplicateSourceHeadersError}
   by default. Stricter than Excel, which silently picks the first match by position and
   produces wrong values; the throw preempts that corruption. (Excel throws "PivotTable field
@@ -137,12 +190,6 @@ the first registered pivot wins on ambiguous overlaps.
 Runtime representation of a pivot table. Wraps the JSF PivotTable definition and provides
 methods for computing layout, writing to sheet cells, and looking up values for GETPIVOTDATA.
 
-### jsf
-
-```ts
-readonly jsf: PivotTable
-```
-
 ### cacheIndex
 
 ```ts
@@ -154,17 +201,19 @@ serialization correlation; runtime lookups go through the attached cache directl
 because the invariant "matches `manager._caches.indexOf(_cache)`" must be updated atomically
 with the cache attachment.
 
-### new PivotTable()
-
-```ts
-constructor(jsf: PivotTable)
-```
-
 ### name
 
 ```ts
 get name(): string
 ```
+
+### cache
+
+```ts
+get cache(): PivotCache | null
+```
+
+The live cache this pivot table computes from (possibly shared), or null before it is bound.
 
 ### sheet
 
@@ -195,6 +244,45 @@ get colFieldIndices(): readonly number[]
 ```
 
 Column field indices with negative placeholders (e.g. -2 for "Values") filtered out.
+
+### fields
+
+```ts
+get fields(): readonly PivotField[]
+```
+
+### rowFields
+
+```ts
+get rowFields(): readonly PivotField[]
+```
+
+### colFields
+
+```ts
+get colFields(): readonly PivotField[]
+```
+
+### pageFields
+
+```ts
+get pageFields(): readonly PivotField[]
+```
+
+### addMeasure()
+
+```ts
+addMeasure(field: PivotField, options?: {
+    name?: string;
+    aggregation?: PivotDataFieldAggregation;
+  }): PivotMeasure
+```
+
+### measures
+
+```ts
+get measures(): readonly PivotMeasure[]
+```
 
 ### dataFields
 
@@ -230,13 +318,66 @@ get location(): import("@jsfkit/types").PivotTableLocation
 ### rowGrandTotals
 
 ```ts
-get rowGrandTotals(): boolean | undefined
+get rowGrandTotals(): boolean
 ```
 
 ### colGrandTotals
 
 ```ts
-get colGrandTotals(): boolean | undefined
+get colGrandTotals(): boolean
+```
+
+### layoutForm
+
+```ts
+get layoutForm(): "compact" | "outline" | "tabular"
+```
+
+The report layout form, read from the fields on the row and column axes: the form is recorded
+per field and the layout renders from those flags, while the root `compact` and `outline` are
+the defaults for a field placed later. Fields that disagree report the least tabular form among
+them, compact before outline. A definition with no axis field reports the root's form.
+
+### showMissing
+
+```ts
+get showMissing(): boolean
+```
+
+### missingCaption
+
+```ts
+get missingCaption(): string | undefined
+```
+
+### rename()
+
+```ts
+rename(newName: string): void
+```
+
+### setGrandTotals()
+
+```ts
+setGrandTotals(axis: "row" | "col", enabled: boolean): void
+```
+
+### setLayoutForm()
+
+```ts
+setLayoutForm(form: "compact" | "outline" | "tabular"): void
+```
+
+### setShowMissing()
+
+```ts
+setShowMissing(show: boolean): void
+```
+
+### setMissingCaption()
+
+```ts
+setMissingCaption(caption: string | undefined): void
 ```
 
 ### style
@@ -309,7 +450,7 @@ Verified against `excel-test/pivot-valuesouter-colsubtotal-verify` and
 ### getDataValue()
 
 ```ts
-getDataValue(dataFieldName: string, criteria: Array<[
+getDataValue(dataFieldName: string | null, criteria: Array<[
     string,
     CellValue
   ]>, options?: {
@@ -317,7 +458,18 @@ getDataValue(dataFieldName: string, criteria: Array<[
   }): CellValue | PivotLookupError
 ```
 
-Look up an aggregated value by data field name and field/item criteria (GETPIVOTDATA).
+Look up an aggregated value by data field name and field/item criteria (GETPIVOTDATA). A null
+name takes the pivot table's first data field, as GETPIVOTDATA's Excel-97 text form does when
+it names no data field.
+
+### matchLookupName()
+
+```ts
+matchLookupName(name: string | number): PivotLookupName | null
+```
+
+What a name names in this pivot table (see {@link matchLookupName}), or null when it names
+nothing in it. A pivot table with no cache names nothing.
 
 ### containsOutput()
 
@@ -364,12 +516,6 @@ area by Excel convention, and the adopted-output export scrub deliberately reads
 
 Runtime representation of a pivot cache: wraps the JSF `PivotCache` definition and exposes
 resolved records with shared-item indices replaced by actual values.
-
-### jsf
-
-```ts
-readonly jsf: PivotCache
-```
 
 ### resolvedRecords
 
@@ -423,6 +569,18 @@ get sourceSheet(): string | undefined
 get sourceRef(): string | undefined
 ```
 
+### adjustSourceRangeForBoundedEdit()
+
+```ts
+adjustSourceRangeForBoundedEdit(sheetName: string, dimension: Dimension, index: number, count: number, spanLo: number, spanHi: number): void
+```
+
+Adjust the source data range after a bounded (partial-width/height) cell insert or delete
+on a sheet, whose shift band spans `[spanLo, spanHi]` on the cross axis. Only a band fully
+covering the source range's cross-axis extent adjusts the ref: its cells then shift exactly
+as a whole-row/column edit would. A band covering the extent only partially leaves the ref
+alone. See {@link adjustRangeStringForBoundedEdit} for the rule.
+
 ### adjustSourceRangeForMove()
 
 ```ts
@@ -446,7 +604,8 @@ type PivotColRole = {
    * Always `'subtotal'`: the column axis has no outline/separator placement (column subtotals
    * always sit right-of-group), so there is no column-subheading row-axis analog.
    */
-  kind: "subtotal"; /** 1-based column-field nesting level (1 = outermost). */
+  kind: "subtotal";
+  /** 1-based column-field nesting level (1 = outermost). */
   level: number;
 }
 ```
@@ -456,7 +615,8 @@ type PivotColRole = {
 ```ts
 type PivotRowRole = {
   row: number;
-  kind: "subheading" | "subtotal"; /** 1-based row-field nesting level (1 = outermost). */
+  kind: "subheading" | "subtotal";
+  /** 1-based row-field nesting level (1 = outermost). */
   level: number;
 }
 ```
@@ -474,12 +634,19 @@ row, identified by its 0-based row offset from the top of the pivot's output are
 
 ```ts
 type PivotPageArea = {
-  /** Ref-relative row offset of the first (top) page-field row (`-(rowCount + 1)`). */ firstRow: number; /** Number of rows the page area spans (the grid height). */
-  rowCount: number; /** Number of page-field column-groups (the grid width). */
-  colCount: number; /** Columns between adjacent column-groups' caption cells (Excel uses 3). */
-  colStride: number; /** Ref-relative column offset of the first column-group's caption cells. */
-  labelCol: number; /** Ref-relative column offset of the first column-group's selected-item cells. */
-  valueCol: number; /** Field fill order across the grid: over-then-down when true, else down-then-over (default). */
+  /** Ref-relative row offset of the first (top) page-field row (`-(rowCount + 1)`). */
+  firstRow: number;
+  /** Number of rows the page area spans (the grid height). */
+  rowCount: number;
+  /** Number of page-field column-groups (the grid width). */
+  colCount: number;
+  /** Columns between adjacent column-groups' caption cells (Excel uses 3). */
+  colStride: number;
+  /** Ref-relative column offset of the first column-group's caption cells. */
+  labelCol: number;
+  /** Ref-relative column offset of the first column-group's selected-item cells. */
+  valueCol: number;
+  /** Field fill order across the grid: over-then-down when true, else down-then-over (default). */
   overThenDown: boolean;
 }
 ```
@@ -509,7 +676,11 @@ type PivotLookupError = {
 ### type PivotLookupErrorReason
 
 ```ts
-type PivotLookupErrorReason = "no_cache" | "data_field_not_found" | "unknown_criteria_field" | "ambiguous_match" | "no_match"
+type PivotLookupErrorReason = "no_cache" | "data_field_not_found" | "unknown_criteria_field" | "ambiguous_match" | 
+/** Every criterion names an item its axis shows, but no row or column holds them all. */
+"no_match" | 
+/** A criterion names an item its axis does not show. */
+"unknown_item" | "page_filter_mismatch"
 ```
 
 ### function isPivotLookupError()

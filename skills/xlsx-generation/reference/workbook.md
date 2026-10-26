@@ -2,14 +2,15 @@
 
 # Workbook and WorkSheet: formulas, structure, export
 
-Generated from `@grid-is/spreadsheet-engine@17.1.1` (`dist/index.d.ts`). Every public symbol listed here exists in that version. If the installed version differs, read `node_modules/@grid-is/spreadsheet-engine/dist/index.d.ts` instead; it is the source of truth.
+Generated from `@grid-is/spreadsheet-engine@18.3.0` (`dist/index.d.ts`). Every public symbol listed here exists in that version. If the installed version differs, read `node_modules/@grid-is/spreadsheet-engine/dist/index.d.ts` instead; it is the source of truth.
 
 Formula edits, sheet management, row and column operations, fill, sort, merges, defined names, and XLSX export live on `Workbook`. `WorkSheet` gives per-sheet bounds and cell iteration.
 
 ## class Workbook extends emitter implements EvaluationContext
 
 Individual workbook within a model. Contains Sheets which contain Cells.
-Has its own dependency graph, so there are no dependencies between workbooks.
+Shares the model's dependency graph with the model's other workbooks, so its formulas can
+depend on their cells and names.
 
 ### ready
 
@@ -176,9 +177,12 @@ JSF/CSF and is emitted to xlsx as the `calcPr calcMode` attribute.
 - `'auto'` (default): formulas recalculate on every change.
 - `'autoNoTable'`: same as `'auto'`, but data-table anchor cells are
   deferred. Setting this triggers {@link Model.deferDataTables}.
-- `'manual'`: informational. Apiary's engine still recalculates on
-  writes; the value is preserved for round-trip and consumed by callers
-  (e.g. the Office.js compatibility layer) that gate recalc themselves.
+- `'manual'`: `recalcVolatiles`, `recalcUncached` and `recalcAll`
+  default to `false` on load, so this workbook's saved values stand and
+  formula cells with no saved value stay uncomputed, as in Excel.
+  Apiary's engine still recalculates on writes; the value is preserved
+  for round-trip and consumed by callers (e.g. the Office.js
+  compatibility layer) that gate recalc themselves.
 
 The setter drives {@link Model.deferDataTables} in both directions ---
 assigning any value other than `'autoNoTable'` resets `deferDataTables`
@@ -503,20 +507,62 @@ is stored in the cell object.
 If `cellData` has an `.f` property (whether null or not), the workbook's dependency graph is
 updated to remove dependencies of the old formula (if any) and add those of the new (if any).
 
+To edit several cells all or nothing, use {@link editCells}.
+
 Precondition: formula parser has finished importing (`formulaParserReady` has resolved).
 
 - `cellRef`: the cell to edit, as a `Reference` or a string representing
 one. If this indicates a range, the top-left cell of that range is
 edited. May also be a name reference (defined name).
-- `cellData`: object with attributes to write to the cell
+- `cellData`: object with attributes to write to the cell. A `dt` property (JSF data-table
+metadata) makes the edited cell the anchor of a what-if data table over `dt.ref`, replacing
+what is there; the next recalculation fills it. `dt: null` removes the table anchored there.
 
 Returns: the existing or new `Cell` instance.
+
+### editCells()
+
+```ts
+editCells(edits: ReadonlyArray<readonly [
+    string | Reference,
+    Omit<CellData, "dt">
+  ]>): Cell[]
+```
+
+Like {@link editCell}, but for several cells at once and all or nothing: an edit that
+`editCell` would refuse leaves the workbook unchanged and throws `editCell`'s error. Edits
+are applied in the order given, so a cell edited more than once holds the last edit. Defined
+names and what-if data tables (`dt`) are not accepted here; edit those with `editCell`.
+
+- `edits`: the cells to edit, each with the cell data to write, as `editCell` takes them.
+
+Returns: the edited cells, in the order of `edits`.
 
 ### writeCellData() (deprecated)
 
 ```ts
 writeCellData(cellRef: string | Reference, cellData: CellData): Cell | DefinedName
 ```
+
+### setArrayFormula()
+
+```ts
+setArrayFormula(rangeRef: string | Reference, formula: string): Cell
+```
+
+Create or replace a legacy Ctrl-Shift-Enter (CSE) array formula over the given range. The
+formula is stored on the range's top-left cell with `ft: 'cse'`, and every cell of the range
+shares one `_spill` node, so that recalculation fits the result to the range (see
+{@link fitCseResult}).
+
+Cells and spill ranges anchored in the range are replaced, and a spill from outside the range
+that reaches into it is masked, as a write into one of its cells masks it. Styles are kept.
+
+- `rangeRef`: the output range, as a string (e.g. `'Sheet1!A1:C3'`) or a {@link Reference}.
+A single cell makes a one-cell CSE formula.
+- `formula`: the formula text, with or without the leading `=`
+
+Returns: the anchor (top-left) cell
 
 ### write()
 
@@ -543,16 +589,17 @@ responsible (typically {@link Model.writeMultiple}).
 ### setColumnWidth()
 
 ```ts
-setColumnWidth(sheetName: string, column: number, width: number): void
+setColumnWidth(sheetName: string, column: number, width: number | null): void
 ```
 
 - `column`: 0-based column index
-- `width`: non-negative
+- `width`: non-negative, or `null` to remove the column's own width so it falls back to the
+sheet default; a styled column instead gets the sheet default width as its own
 
 ### setRowHeight()
 
 ```ts
-setRowHeight(sheetName: string, rowNum: number, height: number): void
+setRowHeight(sheetName: string, rowNum: number, height: number | null): void
 ```
 
 Sets the height of a row.
@@ -566,7 +613,58 @@ formula cells as needed. It is up to the caller to make sure a recalculation
 is eventually triggered.
 
 - `rowNum`: 0-based row index
-- `height`: non-negative
+- `height`: non-negative, or `null` to remove the row's own height so it falls back to the
+sheet default
+
+### setRowStyle()
+
+```ts
+setRowStyle(sheetName: string, row: number, patch: StylePatch): void
+```
+
+Apply a style patch to one or more rows.
+
+- `sheetName`: name of the sheet
+- `row`: 0-based row index
+- `patch`: properties to set, or to remove by passing `null`. See {@link StylePatch}.
+
+### setColumnStyle()
+
+```ts
+setColumnStyle(sheetName: string, column: number, patch: StylePatch): void
+```
+
+Apply a style patch to one or more columns.
+
+- `sheetName`: name of the sheet
+- `column`: 0-based column index
+- `patch`: properties to set, or to remove by passing `null`. See {@link StylePatch}.
+
+### getRowStyle()
+
+```ts
+getRowStyle(sheetName: string, row: number): StyleRelaxed | null
+```
+
+Get the style stored on a row.
+
+- `sheetName`: name of the sheet
+- `row`: 0-based row index
+
+Returns: the row's style, or `null` if the row carries no style
+
+### getColumnStyle()
+
+```ts
+getColumnStyle(sheetName: string, column: number): StyleRelaxed | null
+```
+
+Get the style stored on a column.
+
+- `sheetName`: name of the sheet
+- `column`: 0-based column index
+
+Returns: the column's style, or `null` if the column carries no style
 
 ### mergeCells()
 
@@ -613,10 +711,9 @@ If any error is detected in the formula (syntax error, or use of something
 we do not support), abort and return null if `abortOnError` is true, else
 go ahead and make the defined name but record the error with this.addError.
 
-This method does not create a vertex in the dependency graph. If the graph
-is already built (i.e. outside initial workbook construction), the caller
-must call `updateDependencies([dn.vertexId])` on the returned DefinedName
-to register its vertex and outgoing edges.
+Registers the new name in the dependency graph, so that the rewrites driven by it reach the
+name at once. During workbook construction the workbook is not in the graph yet, and the
+model builds the graph for the whole workbook when it attaches it.
 
 - `sheet`: sheet to scope the name to, or null for workbook scope
 - `abortOnError`: true to return null and make no change if formula has any errors
@@ -1012,7 +1109,7 @@ merged_cells: string[]
 ### drawings
 
 ```ts
-drawings: DrawingCSF[]
+drawings: Drawing[]
 ```
 
 ### comments
@@ -1046,7 +1143,9 @@ locallyScopedNames: Record<string, DefinedName>
 ### new WorkSheet()
 
 ```ts
-constructor(name: string, workbookKey: number, index: number, styles: StyleManager, hidden?: 0 | 1 | 2, /** The origin of the workbook (Excel, Google Sheets, CSV, etc). */ workbookType?: WorkbookType)
+constructor(name: string, workbookKey: number, index: number, styles: StyleManager, hidden?: 0 | 1 | 2, 
+  /** The origin of the workbook (Excel, Google Sheets, CSV, etc). */
+  workbookType?: WorkbookType)
 ```
 
 ### cellCount
@@ -1159,11 +1258,58 @@ getBounds(): SlimRange
 ### setColumnWidth()
 
 ```ts
-setColumnWidth(column: number, width: number): void
+setColumnWidth(column: number, width: number | null): void
 ```
 
 - `column`: 0-based column index
-- `width`: non-negative
+- `width`: non-negative, or `null` to remove the column's own width so it falls back to the
+sheet default; a styled column instead gets the sheet default width as its own
+
+### setRowStyle()
+
+```ts
+setRowStyle(row: number, patch: StylePatch): void
+```
+
+Apply a style patch to a row.
+
+- `row`: 0-based row index
+- `patch`: properties to set, or to remove by passing `null`
+
+### setColumnStyle()
+
+```ts
+setColumnStyle(column: number, patch: StylePatch): void
+```
+
+Apply a style patch to a column.
+
+- `column`: 0-based column index
+- `patch`: properties to set, or to remove by passing `null`
+
+### getRowStyle()
+
+```ts
+getRowStyle(row: number): StyleRelaxed | null
+```
+
+Get the style stored on a row.
+
+- `row`: 0-based row index
+
+Returns: a copy of the row's style, or `null` if the row carries no style
+
+### getColumnStyle()
+
+```ts
+getColumnStyle(column: number): StyleRelaxed | null
+```
+
+Get the style stored on a column.
+
+- `column`: 0-based column index
+
+Returns: a copy of the column's style, or `null` if the column carries no style
 
 ### mergeCells()
 
@@ -1261,7 +1407,8 @@ type WorkbookOptions = {
    * loading from binary data, since the filename cannot be inferred.
    * Should not include path, just filename with extension.
    */
-  filename?: string; /** Settings for iterative calculations (nullish to disable; that's the default) */
+  filename?: string;
+  /** Settings for iterative calculations (nullish to disable; that's the default) */
   iterativeCalculation?: IterativeCalculationOptions;
   /**
    * Spreadsheet-engine compatibility mode, governing formula evaluation and other behaviors that differ between Excel,
@@ -1278,13 +1425,6 @@ type WorkbookOptions = {
    * recalc cost. Defaults to `false`.
    */
   readOnly?: boolean;
-  /**
-   * Whether formulas should be assumed to be of array type even if not
-   * accompanied by an `F` property. Set this to true in tests specs, unless
-   * specifically testing implicit intersection and the like.
-   * @default false
-   */
-  assumeArrayFormulas?: boolean;
   /**
    * Whether this workbook was loaded as an external reference from another workbook.
    * External workbooks can be replaced by "real" workbooks with the same name.
@@ -1522,7 +1662,7 @@ isSpillAnchor(): boolean
 ### edit() (deprecated)
 
 ```ts
-edit(cellData: JSFCellExpanded): void
+edit(cellData: CellData): void
 ```
 
 ### type RewriteFormula
@@ -1575,7 +1715,8 @@ The {@link FillType} values, in one place for runtime validation.
 
 ```ts
 type SortKey = {
-  /** 0-based absolute column index (not relative to the sort range). */ column: number;
+  /** 0-based absolute column index (not relative to the sort range). */
+  column: number;
   ascending?: boolean;
 }
 ```
