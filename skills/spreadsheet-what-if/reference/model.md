@@ -2,7 +2,7 @@
 
 # Model: loading, reading, writing, recalculation
 
-Generated from `@grid-is/spreadsheet-engine@17.1.1` (`dist/index.d.ts`). Every public symbol listed here exists in that version. If the installed version differs, read `node_modules/@grid-is/spreadsheet-engine/dist/index.d.ts` instead; it is the source of truth.
+Generated from `@grid-is/spreadsheet-engine@18.3.2` (`dist/index.d.ts`). Every public symbol listed here exists in that version. If the installed version differs, read `node_modules/@grid-is/spreadsheet-engine/dist/index.d.ts` instead; it is the source of truth.
 
 `Model` is the entry point. It holds one or more workbooks and the shared dependency graph. Value writes recalculate automatically; formula edits go through `Workbook.editCell` and need `model.recalculate(ALL_FORMULA_CELLS)`.
 
@@ -143,7 +143,9 @@ recalculated until `recalculate({ includeDeferred: true })` or
 
 Setting to `true` scans all attached workbooks and adds their data-table
 anchor cells to `cellsToDefer`. Setting to `false` removes all
-data-table anchor cells from `cellsToDefer`.
+data-table anchor cells from `cellsToDefer` and, if any of them are in
+`staleDeferredCells`, recalculates at once to recompute them and their
+dependents, as Excel does on switching to automatic calculation.
 
 **Persistence**: this flag is one-directional --- attaching a workbook
 with `calcMode: "autoNoTable"` sets it to `true`, but removing that
@@ -379,7 +381,8 @@ get staleDeferredCells(): ReadonlySet<CellItem>
 Cells that were encountered as dependents during recalculation but were
 deferred (skipped) because they were configured for deferral. These
 cells have stale values and need `recalculate({ includeDeferred: true })`
-or `recalculate(ALL_FORMULA_CELLS)` to be recalculated.
+or `recalculate(ALL_FORMULA_CELLS)` to be recalculated --- or, for a
+data-table anchor no longer deferred, any recalculation.
 
 Note: non-deferred cells that transitively depend on deferred cells may
 also have stale values, since dependency propagation stops at deferred
@@ -394,6 +397,17 @@ get cellsToDefer(): ReadonlySet<CellItem>
 Cells configured to be skipped during normal recalculation.
 Use `recalculate({ includeDeferred: true })` or
 `recalculate(ALL_FORMULA_CELLS)` to include them.
+
+### cellsWithoutImplementation
+
+```ts
+get cellsWithoutImplementation(): ReadonlySet<CellItem>
+```
+
+Cells holding the value their file cached for them because their formula calls a function
+nothing implements, until something recalculates them; see
+`RecalcState.cellsWithoutImplementation`, and {@link unsupportedFunctions} for the function
+names involved.
 
 ### getWorkbooks()
 
@@ -554,6 +568,12 @@ isGlobal(cellRef: string, workbookName?: string): boolean
 
 - `workbookName`: name of a workbook to look in, if `cellRef` does not have a workbook prefix
 
+### emit()
+
+```ts
+emit(event: string, ...args: unknown[]): ReturnType<typeof emitter>
+```
+
 ### on()
 
 ```ts
@@ -615,10 +635,19 @@ This method triggers the recalculation engine to evaluate formulas based on the 
 graph. It emits a 'beforerecalc' event before starting, handles any errors during calculation,
 and triggers an update event when complete.
 
+If the recalculation throws, the error is reported as a model error and the pending
+change-tracking state is kept, so a later call can retry the affected cells instead of leaving
+them stale. The retry is fully effective only when the failure occurred before cell evaluation
+began (e.g. during recalc prep): a failure partway through evaluation leaves cells marked with
+the aborted run's recalc-state numbers, which the retry reuses (`upToDateState` advances only
+on success), so it may take those cells to be already computed and never reach their stale
+dependents.
+
 If any sheets have GSDV cells (which should only happen if this is the initial recalculation),
 then `Cells.clearGsdv` is called and if any cells are deleted as a result, a second initial
 recalculation is performed (with CHANGED_ONLY, so not updating volatiles again) to update
-formulas depending on them.
+formulas depending on them. That second recalculation is skipped when the recalculation above
+threw, because the changed cells are then left queued for a later retry to pick up.
 
 - `options`: - Controls which cells to recalculate. Can be a
 `WhichCellsToRecalculate` symbol or a {@link RecalculateOptions} object:
@@ -626,10 +655,10 @@ formulas depending on them.
 volatile
 - `CHANGED_ONLY`: recalculates only cells that have changed
 - `ALL_FORMULA_CELLS`: forces recalculation of all formula cells
-- `{ which?, includeDeferred? }`: options object; `includeDeferred: true` includes deferred cells in this
-recalculation while preserving the set of cells to defer for future recalculations.
-Note: `includeDeferred` is redundant with `ALL_FORMULA_CELLS` which
-already ignores deferral.
+- `{ which?, includeDeferred?, includeStaleDeferred? }`: options object. Both inclusion
+options preserve future deferral. `includeDeferred` recomputes every data table;
+`includeStaleDeferred` recomputes only stale or newly dirtied tables, each at most once.
+`includeDeferred` takes precedence when both are true. `ALL_FORMULA_CELLS` ignores deferral.
 
 Returns: An object with a `nativeWorkbooksChanged` property containing any GRID-native
 workbooks that needed recalculation.
@@ -774,15 +803,6 @@ If `single` is false and `values` is true, this returns an `AreaValueArray`.
 If `single` is true and `values` is false, this returns a `Cell`.
 If `single` is true and `values` is true, this returns a `CellValue`.
 
-### analyzeFormula() (deprecated)
-
-```ts
-analyzeFormula(formula: string, options?: {
-    sheetName?: string;
-    workbookName?: string | null;
-  }): AnalyzeFormulaResult
-```
-
 ### analyzeAndFixFormula()
 
 ```ts
@@ -800,7 +820,10 @@ rewriteFormulaAfterMove(formula: string, from: string | A1Reference, to: string 
 
 - `formula`: formula to update.
 - `from`: reference containing a workbook and sheet prefix
-- `to`: reference containing a workbook and sheet prefix
+- `to`: reference containing a workbook and sheet prefix, optionally with that workbook's
+directory (`'C:\dir\[Book2.xlsx]Sheet1'!D9`), which every reference rewritten into that
+workbook then names; without it, a reference retargeted there names `[Book2.xlsx]` alone.
+Only a string `to` can name a directory; `Reference` has no field for one.
 
 Returns: the updated formula.
 
@@ -809,6 +832,25 @@ Returns: the updated formula.
 ```ts
 get errors(): ModelError[]
 ```
+
+### unsupportedFunctions()
+
+```ts
+unsupportedFunctions(): {
+    name: string;
+    references: string[];
+  }[]
+```
+
+The functions called by this model's formulas which the engine does not implement, and where
+they are called from. Each name is upper-cased and carries whatever namespace prefix the
+engine's lookup does not strip, so a call written `_xll.FDS(...)` reports `_XLL.FDS`.
+
+Cells calling these functions keep the value their file cached for them until something
+recalculates them, when the call evaluates to `#NAME?`; see
+`RecalcState.cellsWithoutImplementation`.
+
+Returns: one entry per name, each listing the cell IDs and defined names whose formulas call it
 
 ### meta
 
@@ -824,7 +866,11 @@ get meta(): ModelMeta
 recalcVolatiles?: boolean
 ```
 
-Whether to recalculate volatile cells on init. Assumed true if not specified.
+Whether to recalculate volatile cells on init.
+
+If unset, defaults to `true` unless the workbook's `calculationProperties.calcMode` is
+`"manual"`, in which case it defaults to `false`: such a workbook's saved values are what
+Excel shows on open. An explicit setting wins in either direction.
 
 ### recalcErrors
 
@@ -832,7 +878,34 @@ Whether to recalculate volatile cells on init. Assumed true if not specified.
 recalcErrors?: boolean
 ```
 
-Whether to recalculate cells with error values on init. Assumed true if not specified.
+Whether to recalculate cells whose saved value is an error, on init. Assumed false if not
+specified: the saved error is kept, as Excel keeps it on open.
+
+Turning it on attaches an `origin` reference to each such error, and a `detail` message where
+the engine produces one; no file format stores either. It also replaces the saved error code
+wherever the engine's own result differs, and in an error-heavy workbook the recalculation
+can reach most of the model.
+
+A cell saved as `#REF!` whose formula can only ever evaluate to `#REF!` is not recalculated,
+since recalculating it cannot change its value. It still gets its `origin`. Nothing downstream
+of such a cell is recalculated either, so a dependent whose own saved value disagrees is left
+as saved.
+
+### recalcUncached
+
+```ts
+recalcUncached?: boolean
+```
+
+Whether to evaluate, on init, formula cells that the file cached no value for, instead of
+leaving them blank until a full recalculation. Defaults the same way as
+{@link recalcVolatiles}: `true` unless the workbook's `calculationProperties.calcMode` is
+`"manual"`, where Excel leaves such cells uncomputed on open. Left uncomputed, such a cell
+reads blank, except under `"manual"`, where it holds an empty string as in Excel. Formula cells
+that depend on such a cell are recalculated with it. A cell whose formula references something
+unresolvable (a missing defined name, sheet or workbook, or a function nothing implements)
+reads `#NAME?` or `#REF!`, and a later attach that resolves the reference recalculates it even
+when that attach's other recalc options are off. {@link recalcAll} supersedes this option.
 
 ### recalcAll
 
@@ -848,10 +921,11 @@ If unset, defaults to `true` when the workbook's `calculationProperties.fullCalc
 overrides what the file says, in either direction.
 
 When effective, this runs an `ALL_FORMULA_CELLS` recalc over every workbook in the model,
-not just the one being attached --- stronger than {@link recalcVolatiles} or
-{@link recalcErrors}. Such a recalc evaluates even deferred data-table cells, so a workbook
-with both `calcMode: "autoNoTable"` and `fullCalcOnLoad` has its data tables evaluated once
-at load, as in Excel; {@link Model.deferDataTables} still applies to later recalculations.
+not just the one being attached --- stronger than {@link recalcVolatiles},
+{@link recalcErrors} or {@link recalcUncached}. Such a recalc evaluates even deferred
+data-table cells, so a workbook with both `calcMode: "autoNoTable"` and `fullCalcOnLoad` has
+its data tables evaluated once at load, as in Excel; {@link Model.deferDataTables} still
+applies to later recalculations.
 
 ### extractExpressions
 
@@ -900,6 +974,9 @@ type RecalculateOptions = {
   /** When true, deferred cells are included in this recalculation (but the
    * set of cells to defer is preserved for future recalculations). */
   includeDeferred?: boolean;
+  /** As `includeDeferred`, but recomputes only the data tables that are stale or that this
+   * recalculation dirties, each once. `includeDeferred` takes precedence when both are true. */
+  includeStaleDeferred?: boolean;
 }
 ```
 
@@ -1052,10 +1129,12 @@ type ModelEventArgs = {
     workbookName: string | undefined;
     error: ModelError;
     seenBefore: boolean;
-  }; /** A workbook was attached to the model ({@link Model.addWorkbook} / {@link Model.attachWorkbook}). */
+  };
+  /** A workbook was attached to the model ({@link Model.addWorkbook} / {@link Model.attachWorkbook}). */
   attach: {
     workbookName: string;
-  }; /** A workbook was detached from the model ({@link Model.removeWorkbook}). */
+  };
+  /** A workbook was detached from the model ({@link Model.removeWorkbook}). */
   detach: {
     workbookName: string;
   };
@@ -1069,8 +1148,35 @@ type ModelEventArgs = {
     workbookName: string;
     sheetName: string;
     index: number;
-  }; /** Emitted at the start of {@link Model.recalculate}, before any cell is recalculated. Payload is the model. */
-  beforerecalc: Model; /** Emitted at the end of {@link Model.recalculate}. Payload is the model. */
+  };
+  /** Emitted by a workbook when a sheet is renamed, before the recalc that follows. */
+  renamesheet: {
+    workbookName: string;
+    oldName: string;
+    newName: string;
+    index: number;
+  };
+  /** Emitted by a workbook when a sheet is removed, before the recalc that follows. */
+  removesheet: {
+    workbookName: string;
+    sheetName: string;
+    index: number;
+  };
+  /**
+   * Emitted when a listener for another event throws. Listeners run in order and one that throws
+   * stops neither the others nor the engine call that emitted the event. With no listener for
+   * this event the exception is logged with `console.error`, as is a throw from a listener for
+   * this event itself. `recalcEvent` listeners are the exception: that stream is emitted from
+   * inside cell evaluation and a throw there aborts the recalc and does not trigger `listenererror`
+   * events.
+   */
+  listenererror: {
+    event: string;
+    error: unknown;
+  };
+  /** Emitted at the start of {@link Model.recalculate}, before any cell is recalculated. Payload is the model. */
+  beforerecalc: Model;
+  /** Emitted at the end of {@link Model.recalculate}. Payload is the model. */
   recalc: Model;
   /**
    * Function-call timing sample (one event per evaluated function or
@@ -1169,6 +1275,16 @@ returned. Passing `workbookName` confines the search to that workbook, as a
 reference naming a workbook asks for a name in it and nowhere else. If no
 match is found, #NAME? is returned.
 
+### resolveNameOutsideLet
+
+```ts
+resolveNameOutsideLet?: EvaluationContext["resolveName"]
+```
+
+`resolveName` without the variables of the enclosing `LET` expressions; absent outside `LET`.
+A lambda body resolves names where the lambda is defined, so a lambda called inside a `LET`
+does not see its variables.
+
 ### resolveTable
 
 ```ts
@@ -1216,6 +1332,17 @@ where `OtherLambda` is defined as `LAMBDA(y, x + y)` ... because in the
 latter case, the `x` in `OtherLambda` refers to the _defined name_ `x`, not
 the lambda parameter `x` of the calling lambda.
 
+### letParameterNames
+
+```ts
+letParameterNames?: ReadonlySet<string>
+```
+
+Upper-cased names of the parameters of the LET expressions enclosing the node being evaluated
+or analysed. A name node naming one of these is a reference to the LET parameter even when the
+reference parser rejects the name (`R`, `C`) or reads it as a cell address (`A1`), which a
+defined name may not have but a LET parameter may.
+
 ### resolveLambdaArgumentAST
 
 ```ts
@@ -1254,6 +1381,21 @@ the actual dependencies depend on the calling context's sheet. Setting this
 to true causes reference analysis to recurse into such names and yield their
 context-specific references, in addition to a nonvalue reference to the name
 itself.
+
+### relativeRefOrigin
+
+```ts
+relativeRefOrigin?: {
+    row: number;
+    col: number;
+  } | null
+```
+
+Zero-based coordinates of the cell against which a reference coordinate written without a `$`
+is resolved. A defined name stores the address its reference resolves to in `A1`, so each
+referencing cell shifts the unanchored coordinates by its own position; this is set only while
+such a name's formula is evaluated on a referencing cell's behalf. An ordinary cell formula's
+written address is the address it names, so this stays unset there and nothing shifts.
 
 ### visitedContextDependentNames
 
@@ -1334,6 +1476,16 @@ singleCell?: boolean
 
 True if formulas should be evaluated in single-cell (non-array) mode.
 Default false.
+
+### plain
+
+```ts
+plain?: boolean
+```
+
+True if the formula is a plain formula (formula type `'plain'`), evaluated by Excel's
+pre-dynamic-array rules: its result never spills, and each argument's context, array or scalar,
+follows from the parameter it is passed to. Default false.
 
 ### supportedFunctionNames
 
@@ -1588,7 +1740,8 @@ The snapshot is unchanged after the call and can be applied again.
 - `options.skipRecalc`: skip the trailing `model.recalculate()`. The caller is then
 expected to flush `changedSinceRecalc` itself.
 - `options.includeDeferred`: passed through to the trailing `model.recalculate()`. Defaults
-to `true` so the post-apply model is fully consistent.
+to the model's own deferral, as `model.recalculate()` does; pass `true` to also recalculate
+deferred cells.
 
 ### function serializeModel()
 
@@ -1673,6 +1826,15 @@ level: Level
 vertexIds: VertexIdSet<CellVertexId | NameVertexId>
 ```
 
+### subject
+
+```ts
+subject?: string
+```
+
+What the error is about, for error types that have a subject: the function name, for `fn` and
+`fn-unsup`.
+
 ### new ModelError()
 
 ```ts
@@ -1691,15 +1853,20 @@ get references(): Set<string>
 
 Returns: set of cell IDs (e.g. `Sheet1!A1`), defined names, and column names for structured sheets
 
+### ModelError.isUnsupportedFunctionType()
+
+```ts
+static isUnsupportedFunctionType(type: string): boolean
+```
+
+Whether an error of the given type reports a call to a function the engine does not implement
+(`fn`, or `fn-unsup` for one it never will).
+
 ### ModelError.fromCircularDependencyWith()
 
 ```ts
 static fromCircularDependencyWith(vertexIds: ConvertibleToVertexIDs): ModelError
 ```
-
-Create a circular dependency error involving the given cells.
-
-- `vertexIds`: vertex IDs of cells (defined names or sheet cells) known to be involved in a dependency cycle
 
 ### ModelError.fromUnsupported()
 
