@@ -2,7 +2,7 @@
 
 # @grid-is/agent-tools/tools API
 
-Generated from `@grid-is/agent-tools@0.3.3` (`dist/tools.d.ts`). Every public symbol listed here exists in that version. If the installed version differs, read `node_modules/@grid-is/agent-tools/dist/tools.d.ts` instead; it is the source of truth.
+Generated from `@grid-is/agent-tools@0.5.0` (`dist/tools.d.ts`). Every public symbol listed here exists in that version. If the installed version differs, read `node_modules/@grid-is/agent-tools/dist/tools.d.ts` instead; it is the source of truth.
 
 The tools alone, without the MCP server or file session. They run against an in-memory engine `Model`, in Node or a browser bundle.
 

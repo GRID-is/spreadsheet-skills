@@ -2,7 +2,7 @@
 
 # Cells, values and references
 
-Generated from `@grid-is/spreadsheet-engine@17.1.1` (`dist/index.d.ts`). Every public symbol listed here exists in that version. If the installed version differs, read `node_modules/@grid-is/spreadsheet-engine/dist/index.d.ts` instead; it is the source of truth.
+Generated from `@grid-is/spreadsheet-engine@18.3.2` (`dist/index.d.ts`). Every public symbol listed here exists in that version. If the installed version differs, read `node_modules/@grid-is/spreadsheet-engine/dist/index.d.ts` instead; it is the source of truth.
 
 The shape of a cell as returned by `readCell` and `readCells`, the value types formulas produce, and the helpers for A1 references and coordinates.
 
@@ -29,10 +29,17 @@ formula, if any
 ### ft
 
 ```ts
-ft?: "a" | null
+ft?: "a" | "cse" | "plain" | null
 ```
 
-Formula type, 'a' for array formula, absent for single-cell formula.
+Formula type:
+
+- `'a'`: dynamic-array formula (auto-resizing spill)
+- `'cse'`: legacy Ctrl-Shift-Enter array formula (fixed output range)
+- `'plain'`: formula loaded from a file without an array mark (a plain `<f>` in XLSX, no `F`
+  in JSF), outside Google Sheets mode; evaluated by Excel's pre-dynamic-array rules
+- absent/`null`: the default type, which a newly entered formula has; evaluated by
+  dynamic-array rules, except in Google Sheets mode, where it is a single-cell formula
 
 ### M
 
@@ -258,10 +265,17 @@ formula, if any
 ### ft
 
 ```ts
-ft?: "a" | null
+ft?: "a" | "cse" | "plain" | null
 ```
 
-Formula type, 'a' for array formula, absent for single-cell formula.
+Formula type:
+
+- `'a'`: dynamic-array formula (auto-resizing spill)
+- `'cse'`: legacy Ctrl-Shift-Enter array formula (fixed output range)
+- `'plain'`: formula loaded from a file without an array mark (a plain `<f>` in XLSX, no `F`
+  in JSF), outside Google Sheets mode; evaluated by Excel's pre-dynamic-array rules
+- absent/`null`: the default type, which a newly entered formula has; evaluated by
+  dynamic-array rules, except in Google Sheets mode, where it is a single-cell formula
 
 ### v
 
@@ -294,7 +308,7 @@ get sheetIndex(): number | null
 ### edit() (deprecated)
 
 ```ts
-edit(cellData: JSFCellExpanded): void
+edit(cellData: CellData): void
 ```
 
 ### z
@@ -367,15 +381,40 @@ isSpillAnchor(): boolean
 ### type CellData
 
 ```ts
-type CellData = JSFCellExpanded & {
-  /** User-assigned number format (convenience shortcut for style.numberFormat) */ z?: string | null; /** Formula-assigned number format (convenience shortcut for style.numberFormatFromFormula) */
-  zf?: string | null; /** Formula type: `'a'` for array formula */
-  ft?: "a" | null;
+type CellData = Omit<Cell, "f" | "v" | "s" | "dt"> & {
+  /** Formula string (never an index into the workbook's formulas) */
+  f?: string | null;
+  /**
+   * What-if data table metadata. On an edit, establishes (or replaces) a data table anchored at
+   * the edited cell; `null` removes the data table anchored there. See {@link Workbook.editCell}.
+   */
+  dt?: DataTable | null;
+  /** Cell value, which may be a {@link FormulaError} */
+  v?: string | number | boolean | FormulaError | null;
+  /** Style index, or {@link Style} object */
+  s?: number | Style | null;
+  /** User-assigned number format (convenience shortcut for style.numberFormat) */
+  z?: string | null;
+  /** Formula-assigned number format (convenience shortcut for style.numberFormatFromFormula) */
+  zf?: string | null;
+  /**
+   * Formula type:
+   *
+   * - `'a'`: dynamic-array formula (auto-resizing spill, may grow/shrink/`#SPILL!`)
+   * - `'cse'`: legacy Ctrl-Shift-Enter array formula (fixed output range; result
+   *   is broadcast/truncated/`#N/A`-padded to that range)
+   * - `'plain'`: formula loaded from a file without an array mark (a plain `<f>` in XLSX, no `F`
+   *   in JSF), outside Google Sheets mode; evaluated by Excel's pre-dynamic-array rules
+   * - absent/`null`: the default type, which a newly entered formula has; evaluated by
+   *   dynamic-array rules, except in Google Sheets mode, where it is a single-cell formula
+   */
+  ft?: "a" | "cse" | "plain" | null;
 }
 ```
 
-Extended cell data type that includes z/zf for backwards compatibility.
-These properties are convenience shortcuts specifying number formats directly in cell data.
+Cell data, as passed to {@link Workbook.editCell}: the JSF {@link JSFCell} type, except
+that `f`, `v` and `s` are typed as below and `z`, `zf` and `ft` are added. `null` in `f`, `v`,
+`s` or `z` clears that field in an edit.
 
 ### type CellItem
 
@@ -620,11 +659,17 @@ static ofTransposed(value: MaybeBoxed<ArrayValue> | MaybeBoxed<ArrayValue>[][] |
 static createColumn(columnValues: MaybeBoxed<ArrayValue>[]): Matrix
 ```
 
+A single-column matrix of the given values, copied. Built directly rather than by `set` per
+element, which does size bookkeeping on each call.
+
 ### Matrix.createRow()
 
 ```ts
 static createRow(rowValues: MaybeBoxed<ArrayValue>[]): Matrix
 ```
+
+A single-row matrix of the given values, copied. Built as `createColumn` is; no values yield
+no rows, not one empty row.
 
 ### size
 
@@ -659,12 +704,14 @@ toString(): string
 ### setData()
 
 ```ts
-setData(data: AreaValueArray | AreaBoxedValueArray | MaybeBoxed<ArrayValue>[][]): this
+setData(data: AreaValueArray | AreaBoxedValueArray | MaybeBoxed<ArrayValue>[][], borrowRows?: boolean): this
 ```
 
 Populate this matrix with the given data array.
-The rows in `data` will be referenced, not copied, so `data` should be
-considered to belong to this matrix henceforth, i.e. not mutated elsewhere.
+The rows in `data` will be referenced, not copied, so by default `data` should be considered
+to belong to this matrix henceforth, i.e. not mutated elsewhere. Pass `borrowRows` where the
+rows belong to someone else, such as a resolved area also handed to other callers: the
+matrix then copies them all before writing into any.
 
 ### set()
 
@@ -683,6 +730,15 @@ get(x: number, y: number, strict?: boolean): ArrayValue
 ```ts
 getBoxed(x: number, y: number): MaybeBoxed<ArrayValue>
 ```
+
+### readsRowsOf()
+
+```ts
+readsRowsOf(area: readonly unknown[]): boolean
+```
+
+Whether this matrix still reads the rows of `area` itself, borrowed by {@link setData} and not
+copied since. Rows are only ever copied all at once, so the first and last stand for the rest.
 
 ### getByIndex()
 
@@ -870,11 +926,12 @@ iterAllWithCount(): IterableIterator<{
   }>
 ```
 
-Yield all values, including default values for unpopulated areas (but only
-once, with a count for how many times they are repeated), in unspecified
-order. The same value may be yielded multiple times, so the count each time
-is not necessarily the total number of occurrences of that value in the
-matrix; this is just run-length encoding to cut down on repetition.
+Yield all values in reading order (row by row), each with a count of how many cells it stands
+for. Beyond the populated part, every column repeats the one just past it and every row the one
+just below it, so only those are visited, with counts covering the rest. The same value may be
+yielded multiple times, so the count each time is not necessarily the total number of
+occurrences of that value in the matrix; this is just run-length encoding to cut down on
+repetition.
 
 ### visitAllWithCount()
 
@@ -927,6 +984,18 @@ map(fn: (element: MaybeBoxed<ArrayValue>, coords: {
   }) => MaybeBoxed<ArrayValue>): Matrix
 ```
 
+### zipWith()
+
+```ts
+zipWith(other: Matrix, fn: (element: MaybeBoxed<ArrayValue>, otherElement: MaybeBoxed<ArrayValue>) => MaybeBoxed<ArrayValue>): Matrix
+```
+
+Combine this matrix with `other` element by element: the same as
+`this.map((element, { x, y }) => fn(element, other.getBoxed(x, y)))`, so each default-region
+element of this matrix is combined once, with the element of `other` at the first coordinates
+of that region. When the two populated areas coincide (as with FILTER include vectors of the
+same length), the populated elements of both are read straight from their rows.
+
 ### iterRowsBoxed()
 
 ```ts
@@ -936,6 +1005,11 @@ iterRowsBoxed(): IterableIterator<{
   }>
 ```
 
+Yield each row of this matrix with its index. Each row is a fresh array, which the caller may
+change without reaching this matrix, or another that shares its arrays.
+
+Returns: an iterator of `{ y, row }`, top to bottom
+
 ### iterColumnsBoxed()
 
 ```ts
@@ -944,6 +1018,11 @@ iterColumnsBoxed(): IterableIterator<{
     column: MaybeBoxed<ArrayValue>[];
   }>
 ```
+
+Yield each column of this matrix with its index. Each column is a fresh array, which the
+caller may change without reaching this matrix, or another that shares its arrays.
+
+Returns: an iterator of `{ x, column }`, left to right
 
 ### isPartiallyPopulated
 
@@ -1073,10 +1152,16 @@ readonly boundArgs: undefined | Map<LambdaParameterSymbol, LambdaArg>
 readonly ownParameterSymbols: DefaultMap<string, LambdaParameterSymbol>
 ```
 
+### letScope
+
+```ts
+readonly letScope: LambdaLetScope | null
+```
+
 ### new Lambda()
 
 ```ts
-constructor(parameterNames: string[], expression: ASTRootNode, outer?: LambdaBindings, parameterSymbols?: Map<string, LambdaParameterSymbol>)
+constructor(parameterNames: string[], expression: ASTRootNode, outer?: LambdaBindings | null, parameterSymbols?: Map<string, LambdaParameterSymbol> | null, letScope?: LambdaLetScope | null)
 ```
 
 ### call()
@@ -1094,14 +1179,25 @@ callWithAST(ctx: EvaluationContext, args: ASTNode[]): MaybeBoxedFormulaArgument
 ### Lambda.fromAST()
 
 ```ts
-static fromAST(ast: ASTLambdaNode, outer?: LambdaBindings): Lambda
+static fromAST(ast: ASTLambdaNode, outer?: LambdaBindings | null, ctx?: EvaluationContext): Lambda
 ```
+
+- `ast`: the lambda definition
+- `outer`: the parameter bindings of the enclosing lambdas
+- `ctx`: the context in which the lambda is defined, to resolve names in its `LET` scope
+
+Returns: the lambda, bound to `outer` and to the `LET` scope of `ctx` where there is one
 
 ### withBoundArgs()
 
 ```ts
-withBoundArgs(outer: LambdaBindings): Lambda
+withBoundArgs(outer?: LambdaBindings | null, letScope?: LambdaLetScope | null): Lambda
 ```
+
+- `outer`: the parameter bindings of the enclosing lambdas
+- `letScope`: the name resolution of the `LET` scope in which the lambda is defined
+
+Returns: a lambda with this one's parameters and body, bound to `outer` and `letScope`
 
 ### toString()
 
@@ -1210,6 +1306,64 @@ for use by dependencies such as that of `FORMULATEXT(A1)`, which depends
 on the formula of cell A1 but not on its value, so should not require A1
 to be up-to-date before the depending cell is evaluated.
 
+### fromBranch
+
+```ts
+readonly fromBranch: boolean
+```
+
+True if this reference was handed on unread as one of:
+
+- an `IF` or `CHOOSE` branch
+
+- an `IFERROR` or `IFNA` fallback
+
+- `REDUCE`'s final accumulator
+
+- a `LET` variable's value, or a `LET` expression's result
+
+A function that computes over a sheet span so marked still does, but wherever the span is
+refused, the error is `#VALUE!` rather than `#REF!`. Dependency analysis and the per-function
+span classification ignore this flag.
+
+### outsideLet
+
+```ts
+readonly outsideLet: boolean
+```
+
+If true, this name reference is read outside the enclosing `LET` expressions, in the body of a
+lambda defined outside them, so it is not one of their variables. For dependency analysis.
+
+### mayBeCalled
+
+```ts
+readonly mayBeCalled: boolean
+```
+
+If true, this name reference may be called as a lambda, directly or by a function it is passed
+to, so dependency analysis reads the body of a lambda bound to it.
+
+### argumentOfCalls
+
+```ts
+readonly argumentOfCalls: readonly object[]
+```
+
+The lambda calls, innermost last, in whose argument this name reference is read, while it is
+reported up through the bodies of their lambdas, where it is not one of their `LET` variables.
+For dependency analysis.
+
+### fromText
+
+```ts
+readonly fromText: boolean
+```
+
+True if `INDIRECT` built this reference from text. A defined name reached that way resolves
+its unanchored coordinates as if from `A1`, i.e. as stored, from every referencing cell, where
+the same name referenced directly resolves them against the referencing cell.
+
 ### workbookName
 
 ```ts
@@ -1271,13 +1425,30 @@ This returns an object with a breakdown of the reference or a null if the refere
 static readonly from: <Arg extends string | A1Reference | NameReference | Reference | Range>(cellRef: Arg, options?: ConstructorParameters<typeof Reference>[1], silent?: boolean) => Arg extends Range ? A1Reference : Arg extends Reference ? Arg : Reference | null
 ```
 
+### Reference.fromName()
+
+```ts
+static fromName(name: string, options?: ReferenceOptions): NameReference
+```
+
+Construct a reference to a name without requiring it to be a name the reference parser
+accepts. The parser rejects names a defined name may not have, such as `R` and `C`, but a
+LET parameter may have such a name (Excel writes it with an `_xlpm.` prefix), so a reference
+to a LET parameter with such a name is built through here, not through `Reference.from`.
+
+- `name`: the name, unparsed
+- `options`: as for the constructor
+
+Returns: a reference to the name
+
 ### new Reference()
 
 ```ts
-constructor(ref: string | Reference | Range, { sheetName, sheetNameEnd, workbookName, dynamic, nonValue, conditional, trim, ctx }?: ReferenceOptions)
+constructor(ref: string | Reference | Range | ParsedReference, { sheetName, sheetNameEnd, workbookName, dynamic, nonValue, conditional, fromBranch, outsideLet, mayBeCalled, argumentOfCalls, fromText, trim, ctx }?: ReferenceOptions)
 ```
 
-- `ref`: a cell address or name, or another `Reference` (copy) or `Range`.
+- `ref`: a cell address or name, or another `Reference` (copy) or `Range`, or a
+`ParsedReference` (see `Reference.fromName`).
 - `options`
 - `options.sheetName`: sheet name to use if none is found in `ref`
 - `options.sheetNameEnd`: end sheet name of a sheet span, if none is found in `ref`
@@ -1285,6 +1456,10 @@ constructor(ref: string | Reference | Range, { sheetName, sheetNameEnd, workbook
 - `options.dynamic`
 - `options.nonValue`
 - `options.conditional`
+- `options.fromBranch`
+- `options.outsideLet`
+- `options.mayBeCalled`
+- `options.argumentOfCalls`
 - `options.trim`
 - `options.ctx`
 
@@ -1433,12 +1608,12 @@ getRefId(cellID?: string | null): string
 ```
 
 Get fully-qualified cell ID. This is either a global name or a cell address prefixed with sheet name ('Sheet1!A1')
-and (if present) a workbook pathname. The sheet name (or global name) is cased as in this reference (or in `cellID`)
-which may be arbitrary. If you need consistent casing, use `getCanonicalCellId`.
+and (if present) a workbook name. The sheet name (or global name) is cased as in this reference (or in
+`cellID`), which may be arbitrary.
 
 - `cellID`: optional, cell ID to qualify. If null (the default), use the (top-left) cell ID of this reference.
 
-Returns: the cell ID prefixed with sheet name and with workbook pathname if present
+Returns: the cell ID prefixed with sheet name and with workbook name if present
 
 ### getCellId()
 
@@ -1470,6 +1645,18 @@ withContext(ctx: EvaluationContext | undefined): Reference
 
 Return a cloned instance with the given evaluation context.
 Used to be called `resolver` in many places.
+
+### markFromBranch()
+
+```ts
+markFromBranch(): Reference
+```
+
+Mark this reference as handed on from a branch (see {@link fromBranch}). A name reference is
+marked too, since it may resolve to a sheet span; `_resolveToNonName` passes the mark on.
+
+Returns: a marked copy, or this same instance if it is already marked or is neither a sheet
+span nor a name
 
 ### applyTrim()
 
@@ -1519,7 +1706,7 @@ sheets as the forward spelling.
 - `resolver`: the evaluation context to resolve in; defaults to this reference's own
 
 Returns: the workbook and the sheets the span covers, or a `FormulaError` if the workbook is
-not found or either endpoint names no sheet in it
+not found or either endpoint names a nonexistent sheet
 
 ### expandSheetSpan()
 
@@ -1537,7 +1724,7 @@ unchanged).
 - `resolver`: the evaluation context to resolve in; defaults to this reference's own
 
 Returns: one reference per covered sheet, or a `FormulaError` if the workbook is not found or
-either endpoint names no sheet in it
+either endpoint names a nonexistent sheet
 
 ### resolveAreaCells()
 
@@ -1618,6 +1805,13 @@ encounters a circular dependency via defined names referencing one another
 resolveCell(): CellItem | null
 ```
 
+Resolve this reference to the single cell it names.
+
+Returns: the referenced cell (null if the sheet has none there), or a new cell holding the
+value a defined name evaluates to, or holding an error if this reference spans more than one
+cell or sheet, lacks a resolver, or names a missing sheet or workbook. A name evaluating to a
+lambda yields the resolver's mode's {@link uncalledLambdaError}.
+
 ### resolveCellOrDefinedName()
 
 ```ts
@@ -1640,7 +1834,7 @@ The reference must have a context, else this will throw.
 
 ```ts
 resolveName(opts?: EvaluationContext): {
-    resolved: MaybeBoxedFormulaValue;
+    resolved: MaybeBoxedFormulaArgument;
     nameCell?: DefinedName;
   }
 ```
@@ -1648,7 +1842,8 @@ resolveName(opts?: EvaluationContext): {
 Resolve name reference if that's what this is, returning what its formula resolves to.
 If this is already an address range reference, it is just returned.
 If it is a name reference, the `rawOutput` result of that name's formula is returned. That may be:
-* another reference (if the formula is e.g. `=Sheet1!A1`)
+* another reference (if the formula is e.g. `=Sheet1!A1`); an unqualified name reference is bound
+  to the workbook-level name of that name, else to `#NAME?`
 * a number, string, boolean or `FormulaError` (for e.g. `=A1+B2`, `=A1&B2`, `=A1=B2`, or `=IDONTEXIST()`)
 
 If the defined name has no last-computed value, or it is stale, or the
@@ -1665,8 +1860,9 @@ dependent cells.
 - `opts`: the evaluation context, if not this.ctx
 
 Returns: resolved: the result of evaluating the named formula (`#NAME?` if
-the name is not found), and nameCell: the defined-name cell object to
-which the name was resolved
+the name is not found, `MISSING` for a LET variable bound to an omitted
+argument), and nameCell: the defined-name cell object to which the name
+was resolved
 
 ### resolveToNonName()
 
@@ -1683,7 +1879,8 @@ this reference is already not a name reference, just return `this`.
 
 Returns: this reference if it is not a name reference, else the first defined-name formula result
 that isn't a name reference, else `ERROR_NAME` if defined-name formula results form a loop of name references
-leading back to this reference. Guaranteed not to return a name reference.
+leading back to this reference. Guaranteed not to return a name reference. A LET variable
+bound to an omitted argument resolves to blank.
 
 ### prefix()
 
@@ -1691,7 +1888,7 @@ leading back to this reference. Guaranteed not to return a name reference.
 prefix(): string
 ```
 
-Generate a prefix according to the workbook name and directory and the sheet name of this reference.
+Generate a prefix according to the workbook name and sheet name (or sheet span) of this reference.
 The prefix may be empty, but if it is not, it ends with '!' so that the reference range expression can be
 concatenated directly onto it.
 
@@ -2125,6 +2322,35 @@ get height(): number
 get size(): number
 ```
 
+### hasUnanchoredBound()
+
+```ts
+hasUnanchoredBound(kind: AddressKind): boolean
+```
+
+True if any bound the address writes out is unanchored, i.e. written without a `$`.
+
+- `kind`: which bounds the address writes out (see `AddressKind`)
+
+Returns: true if a written bound has no `$`
+
+### translateFromOrigin()
+
+```ts
+translateFromOrigin(originRow: number, originCol: number, kind: AddressKind): Range
+```
+
+Return a copy with every unanchored bound shifted by the given zero-based origin, which is how
+a defined name's coordinates read: an unanchored one is an offset from `A1`, resolved against
+the cell that references the name. A bound shifted past the last row or column wraps around to
+the first, so that up-and-left from `A1` is the bottom-right cell.
+
+- `originRow`: zero-based row of the cell the coordinates are resolved against
+- `originCol`: zero-based column of that cell
+- `kind`: which bounds the address writes out (see `AddressKind`)
+
+Returns: the shifted copy, its anchoring flags as on this range
+
 ### equals()
 
 ```ts
@@ -2272,7 +2498,7 @@ merged_cells: string[]
 ### drawings
 
 ```ts
-drawings: DrawingCSF[]
+drawings: Drawing[]
 ```
 
 ### comments
@@ -2306,7 +2532,9 @@ locallyScopedNames: Record<string, DefinedName>
 ### new Sheet()
 
 ```ts
-constructor(name: string, workbookKey: number, index: number, styles: StyleManager, hidden?: 0 | 1 | 2, /** The origin of the workbook (Excel, Google Sheets, CSV, etc). */ workbookType?: WorkbookType)
+constructor(name: string, workbookKey: number, index: number, styles: StyleManager, hidden?: 0 | 1 | 2, 
+  /** The origin of the workbook (Excel, Google Sheets, CSV, etc). */
+  workbookType?: WorkbookType)
 ```
 
 ### cellCount
@@ -2419,11 +2647,58 @@ getBounds(): SlimRange
 ### setColumnWidth()
 
 ```ts
-setColumnWidth(column: number, width: number): void
+setColumnWidth(column: number, width: number | null): void
 ```
 
 - `column`: 0-based column index
-- `width`: non-negative
+- `width`: non-negative, or `null` to remove the column's own width so it falls back to the
+sheet default; a styled column instead gets the sheet default width as its own
+
+### setRowStyle()
+
+```ts
+setRowStyle(row: number, patch: StylePatch): void
+```
+
+Apply a style patch to a row.
+
+- `row`: 0-based row index
+- `patch`: properties to set, or to remove by passing `null`
+
+### setColumnStyle()
+
+```ts
+setColumnStyle(column: number, patch: StylePatch): void
+```
+
+Apply a style patch to a column.
+
+- `column`: 0-based column index
+- `patch`: properties to set, or to remove by passing `null`
+
+### getRowStyle()
+
+```ts
+getRowStyle(row: number): StyleRelaxed | null
+```
+
+Get the style stored on a row.
+
+- `row`: 0-based row index
+
+Returns: a copy of the row's style, or `null` if the row carries no style
+
+### getColumnStyle()
+
+```ts
+getColumnStyle(column: number): StyleRelaxed | null
+```
+
+Get the style stored on a column.
+
+- `column`: 0-based column index
+
+Returns: a copy of the column's style, or `null` if the column carries no style
 
 ### mergeCells()
 

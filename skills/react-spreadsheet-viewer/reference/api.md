@@ -2,12 +2,12 @@
 
 # @grid-is/spreadsheet-viewer API
 
-Generated from `@grid-is/spreadsheet-viewer@3.1.1` (`dist/index.d.ts`). Every public symbol listed here exists in that version. If the installed version differs, read `node_modules/@grid-is/spreadsheet-viewer/dist/index.d.ts` instead; it is the source of truth.
+Generated from `@grid-is/spreadsheet-viewer@3.4.0` (`dist/index.d.ts`). Every public symbol listed here exists in that version. If the installed version differs, read `node_modules/@grid-is/spreadsheet-viewer/dist/index.d.ts` instead; it is the source of truth.
 
 ### function SpreadsheetViewer()
 
 ```ts
-function SpreadsheetViewer({ model, fontConfig, theme, showErrorTooltips, initialSelection, onChange, showFormulaReferencesOnCellSelection, }: SpreadsheetViewerProps): JSX.Element
+function SpreadsheetViewer({ model, fontConfig, theme, showErrorTooltips, initialSelection, onChange, controllerRef, showFormulaReferencesOnCellSelection, }: SpreadsheetViewerProps): JSX.Element
 ```
 
 ## class A1Ref
@@ -112,6 +112,28 @@ Returns: The A1-style string representation (e.g., "Sheet1!A1:B2")
 ```ts
 type Model = SpreadsheetEditorBaseProps["model"]
 ```
+
+## interface SpreadsheetViewerController
+
+### selectCells
+
+```ts
+selectCells: (ref: string) => void
+```
+
+### selectSheet
+
+```ts
+selectSheet: (sheetName: string) => void
+```
+
+### overlays
+
+```ts
+overlays: SpreadsheetOverlays
+```
+
+Your own UI placed on cells. The same API as the editor's.
 
 ### type ViewerEvent
 
